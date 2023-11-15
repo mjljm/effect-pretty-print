@@ -1,0 +1,38 @@
+{
+	"name": "@mjljm/effect-pretty-print",
+	"exports": {
+		"./*": {
+			"import": "./src/*.ts"
+		}
+	},
+	"devDependencies": {
+		"@effect/language-service": "0.0.21",
+		"@html-eslint/eslint-plugin": "0.20.0",
+		"@html-eslint/parser": "0.20.0",
+		"@tsconfig/node20": "20.1.2",
+		"@tsconfig/strictest": "2.0.2",
+		"@types/eslint": "8.44.7",
+		"@types/eslint-config-prettier": "6.11.3",
+		"@types/eslint__js": "8.42.3",
+		"@types/luxon": "3.3.4",
+		"@typescript-eslint/eslint-plugin": "^6.11.0",
+		"@typescript-eslint/parser": "^6.11.0",
+		"eslint": "^8.53.0",
+		"eslint-config-prettier": "^9.0.0",
+		"eslint-plugin-markdown": "3.0.1",
+		"eslint-plugin-yml": "1.10.0",
+		"prettier": "3.1.0",
+		"terser": "^5.24.0",
+		"typescript": "5.2.2",
+		"vite": "4.5.0"
+	},
+	"dependencies": {
+		"@mjljm/effect-data-lib": "workspace:^",
+		"effect": "2.0.0-next.55"
+	},
+	"type": "module",
+	"packageManager": "pnpm@8.10.2",
+	"scripts": {
+		"build": "vite build"
+	}
+}
