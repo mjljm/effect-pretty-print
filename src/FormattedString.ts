@@ -15,18 +15,24 @@ export interface FormattedString {
 	readonly printedLength: number;
 }
 
-export const FormattedString = MStruct.make<FormattedString>;
+export const make = MStruct.make<FormattedString>;
 
 export const makeFromUnformattedString = (s: string): FormattedString =>
-	FormattedString({
+	make({
 		value: s,
+		printedLength: s.length
+	});
+
+export const makeWithFormatFunction = (s: string, f: (i: string) => string): FormattedString =>
+	make({
+		value: f(s),
 		printedLength: s.length
 	});
 
 export const append =
 	(s: FormattedString) =>
 	(self: FormattedString): FormattedString =>
-		FormattedString({
+		make({
 			value: self.value + s.value,
 			printedLength: self.printedLength + s.printedLength
 		});
@@ -34,7 +40,7 @@ export const append =
 export const prepend =
 	(s: FormattedString) =>
 	(self: FormattedString): FormattedString =>
-		FormattedString({
+		make({
 			value: s.value + self.value,
 			printedLength: s.printedLength + self.printedLength
 		});
@@ -42,7 +48,7 @@ export const prepend =
 export const appendUnformattedString =
 	(s: string) =>
 	(self: FormattedString): FormattedString =>
-		FormattedString({
+		make({
 			value: self.value + s,
 			printedLength: self.printedLength + s.length
 		});
@@ -50,7 +56,7 @@ export const appendUnformattedString =
 export const prependUnformattedString =
 	(s: string) =>
 	(self: FormattedString): FormattedString =>
-		FormattedString({
+		make({
 			value: s + self.value,
 			printedLength: s.length + self.printedLength
 		});

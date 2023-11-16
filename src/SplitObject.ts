@@ -7,12 +7,12 @@ import * as OptionsAndPrecalcs from '@mjljm/effect-pretty-print/OptionsAndPrecal
 import * as Property from '@mjljm/effect-pretty-print/Property';
 import { Function, Match, Option, ReadonlyArray, identity, pipe } from 'effect';
 
-const _ = (s: string) => FormattedString.makeFromUnformattedString(s);
+const _ = Options._;
 
 export interface SplitObject {
 	readonly startMark: FormattedString.FormattedString;
 	readonly endMark: FormattedString.FormattedString;
-	readonly propertySeparator: FormattedString.FormattedString;
+	readonly objectPropertySeparator: FormattedString.FormattedString;
 	readonly separator: FormattedString.FormattedString;
 	readonly properties: ReadonlyArray<Property.Property>;
 	readonly marksLength: number;
@@ -45,7 +45,7 @@ export const stringify = (
 								)
 						  ),
 					FormattedString.append(prop.prefixedKey),
-					FormattedString.append(self.propertySeparator),
+					FormattedString.append(self.objectPropertySeparator),
 					FormattedString.append(value)
 				)
 			),
@@ -89,7 +89,7 @@ export const makeFromObjectRecord = (
 						Reflect.ownKeys,
 						ReadonlyArray.filterMap((key) =>
 							pipe(
-								options.propertyKeyFormatter(key),
+								options.keyFormatter(key),
 								(formattedKey) =>
 									Property.make({
 										originalKey: key,
@@ -118,11 +118,12 @@ export const makeFromObjectRecord = (
 			make({
 				startMark: options.objectStartMark,
 				endMark: options.objectEndMark,
-				propertySeparator: options.propertySeparator,
+				objectPropertySeparator: options.objectPropertySeparator,
 				separator: options.objectSeparator,
 				properties,
 				marksLength: options.objectMarksLength,
-				sepsLength: options.propertySeparator.printedLength + options.objectSeparator.printedLength
+				sepsLength:
+					options.objectPropertySeparator.printedLength + options.objectSeparator.printedLength
 			})
 	);
 
@@ -185,7 +186,7 @@ export const makeFromArray = (
 			make({
 				startMark: options.arrayStartMark,
 				endMark: options.arrayEndMark,
-				propertySeparator: _(''),
+				objectPropertySeparator: _(''),
 				separator: options.arraySeparator,
 				properties,
 				marksLength: options.arrayMarksLength,

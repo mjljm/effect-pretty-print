@@ -1,8 +1,15 @@
 import * as MFunction from '@mjljm/effect-lib/effect/Function';
+import * as MMatch from '@mjljm/effect-lib/effect/Match';
 import * as MStruct from '@mjljm/effect-lib/effect/Struct';
 import * as FormattedString from '@mjljm/effect-pretty-print/FormattedString';
 import * as Property from '@mjljm/effect-pretty-print/Property';
-import { Option, Order } from 'effect';
+import * as ANSI from '@mjljm/js-lib/ansi';
+import { Match, Option, Order, ReadonlyArray, String, pipe } from 'effect';
+
+export const _ = (s: string, f?: (i: string) => string) =>
+	f === undefined
+		? FormattedString.makeFromUnformattedString(s)
+		: FormattedString.makeWithFormatFunction(s, f);
 
 export type stringOrSymbolPropertiesType = 'string' | 'symbol' | 'both';
 export type enumerableOrNonEnumarablePropertiesType = 'enumerable' | 'nonEnumerable' | 'both';
@@ -15,12 +22,12 @@ export type objectPropertiesSortMethodType =
 export interface Options {
 	/**
 	 * Whether to show string or symbol properties of objects, or both.
-	 * Default: 'string'
+	 * Default: 'both'
 	 */
 	readonly stringOrSymbolProperties?: stringOrSymbolPropertiesType;
 	/**
 	 * Whether to show enumerable or non-enumerable properties of objects, or both.
-	 * Default: 'enumerable'
+	 * Default: 'both'
 	 */
 	readonly enumerableOrNonEnumarableProperties?: enumerableOrNonEnumarablePropertiesType;
 	/**
@@ -30,7 +37,7 @@ export interface Options {
 	readonly showFunctions?: boolean;
 	/**
 	 * Whether to show inherited properties of the prototype chain.
-	 * Default: false
+	 * Default: true
 	 */
 	readonly showInherited?: boolean;
 	/**
@@ -71,7 +78,7 @@ export interface Options {
 	 * String to use as separator between key and value when displaying an object
 	 * Default: ': '
 	 */
-	readonly propertySeparator?: FormattedString.FormattedString;
+	readonly objectPropertySeparator?: FormattedString.FormattedString;
 	/**
 	 * String to use as mark for object start
 	 * Default: '{'
@@ -104,7 +111,7 @@ export interface Options {
 	readonly arraySeparator?: FormattedString.FormattedString;
 	/**
 	 * Any object or array shorter than `noLineBreakIfShorterThan` will be printed on a single line without tabs. If inferior or equal to 0, objects and arrays, even empty, are always split on multiple lines.
-	 * Default: 0
+	 * Default: 40
 	 */
 	readonly noLineBreakIfShorterThan?: number;
 	/**
@@ -113,17 +120,17 @@ export interface Options {
 	 */
 	readonly propertyPredicate?: (property: Property.Property) => Option.Option<boolean>;
 	/**
-	 * Function used to format the properties of an object, e.g add color or modify the way symbols are displayed.
+	 * Function used to format the keys of an object, e.g add color or modify the way symbols are displayed.
 	 * Default:
-	 * 		(p: string | symbol) =>
+	 *	(key: symbol | string):FormattedString.FormattedString =>
 	 *			pipe(
 	 *				Match.type<string | symbol>(),
-	 *				Match.when(Match.string, (v) => FormattedString.FormattedString.makeFromUnFormattedString.FormattedString(v.toString())),
-	 *				Match.when(Match.symbol, (v) => FormattedString.FormattedString.makeFromUnFormattedString.FormattedString(v.toString())),
+	 *				Match.when(Match.symbol, (sym) => _(sym.toString())),
+	 *				Match.when(Match.string, (s) => _(s)),
 	 *				Match.exhaustive
-	 *			)(p)
+	 *			)(key);
 	 */
-	readonly propertyKeyFormatter?: (key: symbol | string) => FormattedString.FormattedString;
+	readonly keyFormatter?: (key: symbol | string) => FormattedString.FormattedString;
 	/**
 	 * Function used to taylor the pretty print to your needs, e.g change the number of decimals for numbers, change how symbols are printed, add colors, define a special treatment for specific objects...
 	 * Default: a function that calls the toString method on objects that define one different from Object.prototype.toString. This default function is exported under the name defaultFormatter if you want to call iy and modify its output.
@@ -133,3 +140,100 @@ export interface Options {
 
 export const make = MStruct.make<Options>;
 export const makeAllRequired = MStruct.make<Required<Options>>;
+
+export const basicKeyFormatter = (key: symbol | string): FormattedString.FormattedString =>
+	pipe(
+		Match.type<string | symbol>(),
+		Match.when(Match.symbol, (sym) => _(sym.toString())),
+		Match.when(Match.string, (s) => _(s)),
+		Match.exhaustive
+	)(key);
+
+export const basicFormatter = (value: unknown): Option.Option<FormattedString.FormattedString> =>
+	pipe(
+		Match.type<MFunction.Unknown>(),
+		Match.when(MMatch.primitive, () => Option.none()),
+		Match.when(MMatch.function, () => Option.none()),
+		Match.when(MMatch.array, () => Option.none()),
+		Match.when(Match.record, (obj) => {
+			const toString = obj['toString'];
+			if (typeof toString === 'function' && toString !== Object.prototype.toString) {
+				try {
+					return Option.some(_(toString()));
+				} catch (e) {
+					return Option.none();
+				}
+			} else return Option.none();
+		}),
+		Match.exhaustive
+	)(value as MFunction.Unknown);
+
+export const basic = makeAllRequired({
+	stringOrSymbolProperties: 'both',
+	enumerableOrNonEnumarableProperties: 'both',
+	showFunctions: false,
+	showInherited: true,
+	propertiesSortMethod: 'noSorting',
+	propertieSortOrder: Order.string,
+	tab: _('  '),
+	initialTab: _(''),
+	linebreak: _('\n'),
+	prototypePrefix: _('proto.'),
+	objectPropertySeparator: _(': '),
+	objectStartMark: _('{'),
+	objectEndMark: _('}'),
+	objectSeparator: _(','),
+	arrayStartMark: _('['),
+	arrayEndMark: _(']'),
+	arraySeparator: _(','),
+	noLineBreakIfShorterThan: 40,
+	propertyPredicate: () => Option.none(),
+	keyFormatter: basicKeyFormatter,
+	formatter: basicFormatter
+});
+
+export const ansiKeyFormatter = (key: symbol | string): FormattedString.FormattedString =>
+	pipe(
+		Match.type<symbol | string>(),
+		Match.when(Match.symbol, (sym) =>
+			pipe(
+				sym.toString(),
+				String.match(/^Symbol\((.*)\)$/),
+				Option.flatMap(ReadonlyArray.get(0)),
+				Option.map((s) => _(s, ANSI.magenta)),
+				Option.getOrElse(() =>
+					_("Symbol.prototype.toString should output in format 'Symbol(x)'", ANSI.red)
+				)
+			)
+		),
+		Match.when(Match.string, (s) => _(s, ANSI.blue)),
+		Match.exhaustive
+	)(key);
+
+export const ansiFormatter = (value: unknown): Option.Option<FormattedString.FormattedString> =>
+	pipe(
+		Match.type<MFunction.Unknown>(),
+		Match.when(Match.string, (s) => Option.some(_(s, ANSI.blue))),
+		Match.when(Match.number, (n) => Option.some(_(n.toString(), ANSI.black))),
+		Match.when(Match.bigint, (n) => Option.some(_(n.toString(), ANSI.black))),
+		Match.when(Match.boolean, (b) => Option.some(_(b.toString(), ANSI.cyan))),
+		Match.when(Match.symbol, (s) => Option.some(_(s.toString(), ANSI.magenta))),
+		Match.when(Match.undefined, () => Option.some(_('undefined', ANSI.cyan))),
+		Match.when(Match.null, () => Option.some(_('null', ANSI.cyan))),
+		Match.when(MMatch.function, () => Option.some(_('Function()', ANSI.cyan))),
+		Match.when(MMatch.recordOrArray, () => Option.none()),
+		Match.exhaustive
+	)(value as MFunction.Unknown);
+
+export const ansi = make({
+	initialTab: _('  '),
+	objectStartMark: _('{', ANSI.green),
+	objectEndMark: _('}', ANSI.green),
+	objectPropertySeparator: _(': ', ANSI.green),
+	objectSeparator: _(',', ANSI.green),
+	arrayStartMark: _('[', ANSI.green),
+	arrayEndMark: _(']', ANSI.green),
+	arraySeparator: _(',', ANSI.green),
+	keyFormatter: ansiKeyFormatter,
+	formatter: ansiFormatter
+});

@@ -28,6 +28,7 @@
 	},
 	"dependencies": {
 		"@mjljm/effect-lib": "workspace:^",
+		"@mjljm/js-lib": "workspace:^",
 		"effect": "2.0.0-next.55"
 	},
 	"type": "module",
