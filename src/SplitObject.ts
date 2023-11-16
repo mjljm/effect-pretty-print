@@ -1,6 +1,6 @@
-import * as MFunction from '@mjljm/effect-data-lib/effect/Function';
-import * as MMatch from '@mjljm/effect-data-lib/effect/Match';
-import * as MStruct from '@mjljm/effect-data-lib/effect/Struct';
+import * as MFunction from '@mjljm/effect-lib/effect/Function';
+import * as MMatch from '@mjljm/effect-lib/effect/Match';
+import * as MStruct from '@mjljm/effect-lib/effect/Struct';
 import * as FormattedString from '@mjljm/effect-pretty-print/FormattedString';
 import * as Options from '@mjljm/effect-pretty-print/Options';
 import * as OptionsAndPrecalcs from '@mjljm/effect-pretty-print/OptionsAndPrecalcs';

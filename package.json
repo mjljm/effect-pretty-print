@@ -27,7 +27,7 @@
 		"vite": "4.5.0"
 	},
 	"dependencies": {
-		"@mjljm/effect-data-lib": "workspace:^",
+		"@mjljm/effect-lib": "workspace:^",
 		"effect": "2.0.0-next.55"
 	},
 	"type": "module",

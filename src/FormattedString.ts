@@ -1,4 +1,4 @@
-import * as MStruct from '@mjljm/effect-data-lib/effect/Struct';
+import * as MStruct from '@mjljm/effect-lib/effect/Struct';
 import { Order } from 'effect';
 
 /**
