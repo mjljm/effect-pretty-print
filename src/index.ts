@@ -1,2 +1,2 @@
-export * as Options from '#internal/Options';
-export { stringify } from '#internal/stringify';
+export * as Options from '#mjljm/effect-pretty-print/Options';
+export { stringify } from '#mjljm/effect-pretty-print/stringify';

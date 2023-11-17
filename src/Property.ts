@@ -1,4 +1,4 @@
-import * as FormattedString from '#internal/FormattedString';
+import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import { MFunction, MStruct } from '@mjljm/effect-lib';
 import { Order } from 'effect';
 

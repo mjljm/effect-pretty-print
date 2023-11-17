@@ -1,7 +1,7 @@
-import * as FormattedString from '#internal/FormattedString';
-import * as Options from '#internal/Options';
-import * as OptionsAndPrecalcs from '#internal/OptionsAndPrecalcs';
-import * as SplitObject from '#internal/SplitObject';
+import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
+import * as Options from '#mjljm/effect-pretty-print/Options';
+import * as OptionsAndPrecalcs from '#mjljm/effect-pretty-print/OptionsAndPrecalcs';
+import * as SplitObject from '#mjljm/effect-pretty-print/SplitObject';
 import { MFunction, MMatch } from '@mjljm/effect-lib';
 import {
 	HashSet,

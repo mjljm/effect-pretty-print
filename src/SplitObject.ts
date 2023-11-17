@@ -1,7 +1,7 @@
-import * as FormattedString from '#internal/FormattedString';
-import * as Options from '#internal/Options';
-import * as OptionsAndPrecalcs from '#internal/OptionsAndPrecalcs';
-import * as Property from '#internal/Property';
+import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
+import * as Options from '#mjljm/effect-pretty-print/Options';
+import * as OptionsAndPrecalcs from '#mjljm/effect-pretty-print/OptionsAndPrecalcs';
+import * as Property from '#mjljm/effect-pretty-print/Property';
 import { MFunction, MMatch, MStruct } from '@mjljm/effect-lib';
 import { Function, Match, Option, ReadonlyArray, identity, pipe } from 'effect';
 

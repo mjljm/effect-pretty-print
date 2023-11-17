@@ -1,4 +1,4 @@
-import * as Options from '#internal/Options';
+import * as Options from '#mjljm/effect-pretty-print/Options';
 import { MStruct } from '@mjljm/effect-lib';
 
 export interface Type extends Required<Options.Type> {

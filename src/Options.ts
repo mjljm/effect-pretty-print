@@ -1,5 +1,5 @@
-import * as FormattedString from '#internal/FormattedString';
-import * as Property from '#internal/Property';
+import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
+import * as Property from '#mjljm/effect-pretty-print/Property';
 import { MFunction, MMatch, MStruct } from '@mjljm/effect-lib';
 import { ANSI } from '@mjljm/js-lib';
 import { Match, Option, Order, ReadonlyArray, String, pipe } from 'effect';

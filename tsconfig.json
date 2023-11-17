@@ -4,7 +4,7 @@
 		// This path definition allows auto-import in VSCode with
 		// "typescript.preferences.importModuleSpecifier": "non-relative",
 		"paths": {
-			"#internal/*": ["./src/*.ts"]
+			"#mjljm/effect-pretty-print/*": ["./src/*.ts"]
 		}
 	},
 	"include": [".*", "*", "src"]
