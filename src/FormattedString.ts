@@ -1,10 +1,10 @@
-import * as MStruct from '@mjljm/effect-lib/effect/Struct';
+import { MStruct } from '@mjljm/effect-lib';
 import { Order } from 'effect';
 
 /**
  * A string that may contain format characters, e.g css styles or unicode characters
  */
-export interface FormattedString {
+export interface Type {
 	/**
 	 * The underlying string
 	 */
@@ -15,31 +15,34 @@ export interface FormattedString {
 	readonly printedLength: number;
 }
 
-export const make = MStruct.make<FormattedString>;
+export const make = MStruct.make<Type>;
 
-export const makeFromUnformattedString = (s: string): FormattedString =>
+export const makeFromUnformattedString = (s: string): Type =>
 	make({
 		value: s,
 		printedLength: s.length
 	});
 
-export const makeWithFormatFunction = (s: string, f: (i: string) => string): FormattedString =>
+export const makeWithZeroLengthFormatFunction = (
+	s: string,
+	f: (i: string) => string
+): Type =>
 	make({
 		value: f(s),
 		printedLength: s.length
 	});
 
 export const append =
-	(s: FormattedString) =>
-	(self: FormattedString): FormattedString =>
+	(s: Type) =>
+	(self: Type): Type =>
 		make({
 			value: self.value + s.value,
 			printedLength: self.printedLength + s.printedLength
 		});
 
 export const prepend =
-	(s: FormattedString) =>
-	(self: FormattedString): FormattedString =>
+	(s: Type) =>
+	(self: Type): Type =>
 		make({
 			value: s.value + self.value,
 			printedLength: s.printedLength + self.printedLength
@@ -47,7 +50,7 @@ export const prepend =
 
 export const appendUnformattedString =
 	(s: string) =>
-	(self: FormattedString): FormattedString =>
+	(self: Type): Type =>
 		make({
 			value: self.value + s,
 			printedLength: self.printedLength + s.length
@@ -55,7 +58,7 @@ export const appendUnformattedString =
 
 export const prependUnformattedString =
 	(s: string) =>
-	(self: FormattedString): FormattedString =>
+	(self: Type): Type =>
 		make({
 			value: s + self.value,
 			printedLength: s.length + self.printedLength
@@ -63,9 +66,9 @@ export const prependUnformattedString =
 
 /*export const repeat =
 	(n: number) =>
-	(self: FormattedString): FormattedString => ({
+	(self: Type): Type => ({
 		value: String.repeat(n)(self.value),
 		printedLength: n * self.printedLength
 	});*/
 
-export const byValue = Order.mapInput(Order.string, (s: FormattedString) => s.value);
+export const byValue = Order.mapInput(Order.string, (s: Type) => s.value);

@@ -1,19 +1,17 @@
-import * as MFunction from '@mjljm/effect-lib/effect/Function';
-import * as MMatch from '@mjljm/effect-lib/effect/Match';
-import * as MStruct from '@mjljm/effect-lib/effect/Struct';
-import * as FormattedString from '@mjljm/effect-pretty-print/FormattedString';
-import * as Options from '@mjljm/effect-pretty-print/Options';
-import * as OptionsAndPrecalcs from '@mjljm/effect-pretty-print/OptionsAndPrecalcs';
-import * as Property from '@mjljm/effect-pretty-print/Property';
+import * as FormattedString from '#internal/FormattedString';
+import * as Options from '#internal/Options';
+import * as OptionsAndPrecalcs from '#internal/OptionsAndPrecalcs';
+import * as Property from '#internal/Property';
+import { MFunction, MMatch, MStruct } from '@mjljm/effect-lib';
 import { Function, Match, Option, ReadonlyArray, identity, pipe } from 'effect';
 
 const _ = Options._;
 
 export interface SplitObject {
-	readonly startMark: FormattedString.FormattedString;
-	readonly endMark: FormattedString.FormattedString;
-	readonly objectPropertySeparator: FormattedString.FormattedString;
-	readonly separator: FormattedString.FormattedString;
+	readonly startMark: FormattedString.Type;
+	readonly endMark: FormattedString.Type;
+	readonly objectPropertySeparator: FormattedString.Type;
+	readonly separator: FormattedString.Type;
 	readonly properties: ReadonlyArray<Property.Property>;
 	readonly marksLength: number;
 	readonly sepsLength: number;
@@ -22,12 +20,12 @@ export const make = MStruct.make<SplitObject>;
 
 export const stringify = (
 	self: SplitObject,
-	values: ReadonlyArray<FormattedString.FormattedString>,
-	lineBreak: FormattedString.FormattedString,
-	currentTab: FormattedString.FormattedString,
-	tab: FormattedString.FormattedString,
+	values: ReadonlyArray<FormattedString.Type>,
+	lineBreak: FormattedString.Type,
+	currentTab: FormattedString.Type,
+	tab: FormattedString.Type,
 	depth: number
-): FormattedString.FormattedString =>
+): FormattedString.Type =>
 	pipe(FormattedString.append(tab)(currentTab), (nextTab) =>
 		pipe(
 			self.properties,
@@ -61,17 +59,18 @@ export const stringify = (
 interface MFORLoop<X> {
 	readonly input: X;
 	readonly protoChainLevel: number;
-	readonly prefix: FormattedString.FormattedString;
+	readonly prefix: FormattedString.Type;
 }
 
 const MFORLoop = <X>(args: MFORLoop<X>) => MStruct.make<MFORLoop<X>>(args);
 
-const isObjectRecordMFORLoop = (l: MFORLoop<unknown>): l is MFORLoop<MFunction.Record> =>
-	Match.record(l.input);
+const isObjectRecordMFORLoop = (
+	l: MFORLoop<unknown>
+): l is MFORLoop<MFunction.Record> => Match.record(l.input);
 
 export const makeFromObjectRecord = (
 	input: MFunction.Record,
-	options: OptionsAndPrecalcs.OptionsAndPrecalcs
+	options: OptionsAndPrecalcs.Type
 ): SplitObject =>
 	pipe(
 		// Read and filter all properties (own and inherited if requested)
@@ -99,13 +98,17 @@ export const makeFromObjectRecord = (
 										level: protoChainLevel
 									}),
 								(property) =>
-									keepProperty(property, input, options) ? Option.some(property) : Option.none()
+									keepProperty(property, input, options)
+										? Option.some(property)
+										: Option.none()
 							)
 						)
 					),
 				step: ({ input, protoChainLevel, prefix }) =>
 					MFORLoop<unknown>({
-						input: options.showInherited ? (Object.getPrototypeOf(input) as unknown) : null,
+						input: options.showInherited
+							? (Object.getPrototypeOf(input) as unknown)
+							: null,
 						protoChainLevel: protoChainLevel + 1,
 						prefix: FormattedString.append(prefix)(options.prototypePrefix)
 					})
@@ -123,14 +126,15 @@ export const makeFromObjectRecord = (
 				properties,
 				marksLength: options.objectMarksLength,
 				sepsLength:
-					options.objectPropertySeparator.printedLength + options.objectSeparator.printedLength
+					options.objectPropertySeparator.printedLength +
+					options.objectSeparator.printedLength
 			})
 	);
 
 const keepProperty = (
 	property: Property.Property,
 	obj: MFunction.Record,
-	options: OptionsAndPrecalcs.OptionsAndPrecalcs
+	options: OptionsAndPrecalcs.Type
 ) =>
 	Option.match(options.propertyPredicate(property), {
 		onNone: () =>
@@ -149,7 +153,11 @@ const keepProperty = (
 				),
 				Match.when(
 					'nonEnumerable',
-					() => !Object.prototype.propertyIsEnumerable.call(obj, property.originalKey)
+					() =>
+						!Object.prototype.propertyIsEnumerable.call(
+							obj,
+							property.originalKey
+						)
 				),
 				Match.when('both', () => true),
 				Match.exhaustive
@@ -158,19 +166,24 @@ const keepProperty = (
 	});
 
 const sort =
-	(options: OptionsAndPrecalcs.OptionsAndPrecalcs) => (self: ReadonlyArray<Property.Property>) =>
+	(options: OptionsAndPrecalcs.Type) =>
+	(self: ReadonlyArray<Property.Property>) =>
 		pipe(
 			Match.type<Options.objectPropertiesSortMethodType>(),
 			Match.when('byName', () => ReadonlyArray.sort(Property.byName)(self)),
-			Match.when('byPrefixedName', () => ReadonlyArray.sort(Property.byPrefixedName)(self)),
-			Match.when('byLevelAndName', () => ReadonlyArray.sort(Property.byLevelAndName)(self)),
+			Match.when('byPrefixedName', () =>
+				ReadonlyArray.sort(Property.byPrefixedName)(self)
+			),
+			Match.when('byLevelAndName', () =>
+				ReadonlyArray.sort(Property.byLevelAndName)(self)
+			),
 			Match.when('noSorting', () => self as Array<Property.Property>),
 			Match.exhaustive
 		)(options.propertiesSortMethod);
 
 export const makeFromArray = (
 	input: MFunction.Array,
-	options: OptionsAndPrecalcs.OptionsAndPrecalcs
+	options: OptionsAndPrecalcs.Type
 ): SplitObject =>
 	pipe(
 		ReadonlyArray.map(input, (v) =>
@@ -196,7 +209,7 @@ export const makeFromArray = (
 
 export const makeFromArrayOrObjectRecord = (
 	input: MFunction.RecordOrArray,
-	options: OptionsAndPrecalcs.OptionsAndPrecalcs
+	options: OptionsAndPrecalcs.Type
 ): SplitObject =>
 	pipe(
 		Match.type<MFunction.RecordOrArray>(),

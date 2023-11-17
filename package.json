@@ -1,7 +1,14 @@
 {
 	"name": "@mjljm/effect-pretty-print",
+	"main": "./src/index.ts",
+	"module": "./src/index.ts",
 	"exports": {
-		"./*": {
+		".": {
+			"import": "./src/index.ts"
+		}
+	},
+	"imports": {
+		"#internal/*": {
 			"import": "./src/*.ts"
 		}
 	},
@@ -9,6 +16,7 @@
 		"@effect/language-service": "0.0.21",
 		"@html-eslint/eslint-plugin": "0.20.0",
 		"@html-eslint/parser": "0.20.0",
+		"@mjljm/configs": "workspace:^",
 		"@tsconfig/node20": "20.1.2",
 		"@tsconfig/strictest": "2.0.2",
 		"@types/eslint": "8.44.7",
@@ -24,8 +32,7 @@
 		"prettier": "3.1.0",
 		"terser": "^5.24.0",
 		"typescript": "5.2.2",
-		"vite": "4.5.0",
-		"@mjljm/configs": "workspace:^"
+		"vite": "5.0.0"
 	},
 	"dependencies": {
 		"@mjljm/effect-lib": "workspace:^",

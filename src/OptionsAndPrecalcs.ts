@@ -1,9 +1,9 @@
-import * as MStruct from '@mjljm/effect-lib/effect/Struct';
-import * as Options from '@mjljm/effect-pretty-print/Options';
+import * as Options from '#internal/Options';
+import { MStruct } from '@mjljm/effect-lib';
 
-export interface OptionsAndPrecalcs extends Required<Options.Options> {
+export interface Type extends Required<Options.Type> {
 	readonly objectMarksLength: number;
 	readonly arrayMarksLength: number;
 }
 
-export const make = MStruct.make<OptionsAndPrecalcs>;
+export const make = MStruct.make<Type>;

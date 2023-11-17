@@ -1,25 +1,26 @@
-import * as MFunction from '@mjljm/effect-lib/effect/Function';
-import * as MMatch from '@mjljm/effect-lib/effect/Match';
-import * as MStruct from '@mjljm/effect-lib/effect/Struct';
-import * as FormattedString from '@mjljm/effect-pretty-print/FormattedString';
-import * as Property from '@mjljm/effect-pretty-print/Property';
-import * as ANSI from '@mjljm/js-lib/ansi';
+import * as FormattedString from '#internal/FormattedString';
+import * as Property from '#internal/Property';
+import { MFunction, MMatch, MStruct } from '@mjljm/effect-lib';
+import { ANSI } from '@mjljm/js-lib';
 import { Match, Option, Order, ReadonlyArray, String, pipe } from 'effect';
 
 export const _ = (s: string, f?: (i: string) => string) =>
 	f === undefined
 		? FormattedString.makeFromUnformattedString(s)
-		: FormattedString.makeWithFormatFunction(s, f);
+		: FormattedString.makeWithZeroLengthFormatFunction(s, f);
 
 export type stringOrSymbolPropertiesType = 'string' | 'symbol' | 'both';
-export type enumerableOrNonEnumarablePropertiesType = 'enumerable' | 'nonEnumerable' | 'both';
+export type enumerableOrNonEnumarablePropertiesType =
+	| 'enumerable'
+	| 'nonEnumerable'
+	| 'both';
 export type objectPropertiesSortMethodType =
 	| 'byName'
 	| 'byPrefixedName'
 	| 'byLevelAndName'
 	| 'noSorting';
 
-export interface Options {
+export interface Type {
 	/**
 	 * Whether to show string or symbol properties of objects, or both.
 	 * Default: 'both'
@@ -58,57 +59,57 @@ export interface Options {
 	 * String to use as tab applied to indent objects and arrays contents.
 	 * Default: '  ' (two spaces)
 	 */
-	readonly tab?: FormattedString.FormattedString;
+	readonly tab?: FormattedString.Type;
 	/**
 	 * Extra tab that is applied at the start of each new line.
 	 * Default: ''
 	 */
-	readonly initialTab?: FormattedString.FormattedString;
+	readonly initialTab?: FormattedString.Type;
 	/**
 	 * Character to use as linebreak.
 	 * Default: '\n'
 	 */
-	readonly linebreak?: FormattedString.FormattedString;
+	readonly linebreak?: FormattedString.Type;
 	/**
 	 * String to use as prefix for properties inherited from the prototype chain. This prefix will be repeated as many times as the depth of the property in the prototype chain
 	 * Default: 'proto.'
 	 */
-	readonly prototypePrefix?: FormattedString.FormattedString;
+	readonly prototypePrefix?: FormattedString.Type;
 	/**
 	 * String to use as separator between key and value when displaying an object
 	 * Default: ': '
 	 */
-	readonly objectPropertySeparator?: FormattedString.FormattedString;
+	readonly objectPropertySeparator?: FormattedString.Type;
 	/**
 	 * String to use as mark for object start
 	 * Default: '{'
 	 */
-	readonly objectStartMark?: FormattedString.FormattedString;
+	readonly objectStartMark?: FormattedString.Type;
 	/**
 	 * String to use as mark for object end
 	 * Default: '}'
 	 */
-	readonly objectEndMark?: FormattedString.FormattedString;
+	readonly objectEndMark?: FormattedString.Type;
 	/**
 	 * String to use as separator between key/value pairs when displaying an object
 	 * Default: ','
 	 */
-	readonly objectSeparator?: FormattedString.FormattedString;
+	readonly objectSeparator?: FormattedString.Type;
 	/**
 	 * String to use as mark for array start
 	 * Default: '['
 	 */
-	readonly arrayStartMark?: FormattedString.FormattedString;
+	readonly arrayStartMark?: FormattedString.Type;
 	/**
 	 * String to use as mark for array end
 	 * Default: ']'
 	 */
-	readonly arrayEndMark?: FormattedString.FormattedString;
+	readonly arrayEndMark?: FormattedString.Type;
 	/**
 	 * String to use as separator between values when displaying an array
 	 * Default: ','
 	 */
-	readonly arraySeparator?: FormattedString.FormattedString;
+	readonly arraySeparator?: FormattedString.Type;
 	/**
 	 * Any object or array shorter than `noLineBreakIfShorterThan` will be printed on a single line without tabs. If inferior or equal to 0, objects and arrays, even empty, are always split on multiple lines.
 	 * Default: 40
@@ -118,11 +119,13 @@ export interface Options {
 	 * Function used to determine if a property must be displayed or not. If the function returns a none, the property is shown if it satisfies the `stringOrSymbolProperties`, `enumerableOrNonEnumarableProperties` and `showFunctions` options. If it returns a some, the `stringOrSymbolProperties`, `enumerableOrNonEnumarableProperties` and `showFunctions` options are ignored and the content of the some determines if the property iis displayed. This option has no incidence on the `showInherited`option that is applied before it.
 	 * Default: ()=>Option.none()
 	 */
-	readonly propertyPredicate?: (property: Property.Property) => Option.Option<boolean>;
+	readonly propertyPredicate?: (
+		property: Property.Property
+	) => Option.Option<boolean>;
 	/**
 	 * Function used to format the keys of an object, e.g add color or modify the way symbols are displayed.
 	 * Default:
-	 *	(key: symbol | string):FormattedString.FormattedString =>
+	 *	(key: symbol | string):FormattedString.Type =>
 	 *			pipe(
 	 *				Match.type<string | symbol>(),
 	 *				Match.when(Match.symbol, (sym) => _(sym.toString())),
@@ -130,18 +133,20 @@ export interface Options {
 	 *				Match.exhaustive
 	 *			)(key);
 	 */
-	readonly keyFormatter?: (key: symbol | string) => FormattedString.FormattedString;
+	readonly keyFormatter?: (key: symbol | string) => FormattedString.Type;
 	/**
 	 * Function used to taylor the pretty print to your needs, e.g change the number of decimals for numbers, change how symbols are printed, add colors, define a special treatment for specific objects...
 	 * Default: a function that calls the toString method on objects that define one different from Object.prototype.toString. This default function is exported under the name defaultFormatter if you want to call iy and modify its output.
 	 */
-	readonly formatter?: (value: MFunction.Unknown) => Option.Option<FormattedString.FormattedString>;
+	readonly formatter?: (
+		value: MFunction.Unknown
+	) => Option.Option<FormattedString.Type>;
 }
 
-export const make = MStruct.make<Options>;
-export const makeAllRequired = MStruct.make<Required<Options>>;
+export const make = MStruct.make<Type>;
+export const makeAllRequired = MStruct.make<Required<Type>>;
 
-export const basicKeyFormatter = (key: symbol | string): FormattedString.FormattedString =>
+export const basicKeyFormatter = (key: symbol | string): FormattedString.Type =>
 	pipe(
 		Match.type<string | symbol>(),
 		Match.when(Match.symbol, (sym) => _(sym.toString())),
@@ -149,7 +154,9 @@ export const basicKeyFormatter = (key: symbol | string): FormattedString.Formatt
 		Match.exhaustive
 	)(key);
 
-export const basicFormatter = (value: unknown): Option.Option<FormattedString.FormattedString> =>
+export const basicFormatter = (
+	value: unknown
+): Option.Option<FormattedString.Type> =>
 	pipe(
 		Match.type<MFunction.Unknown>(),
 		Match.when(MMatch.primitive, () => Option.none()),
@@ -157,7 +164,10 @@ export const basicFormatter = (value: unknown): Option.Option<FormattedString.Fo
 		Match.when(MMatch.array, () => Option.none()),
 		Match.when(Match.record, (obj) => {
 			const toString = obj['toString'];
-			if (typeof toString === 'function' && toString !== Object.prototype.toString) {
+			if (
+				typeof toString === 'function' &&
+				toString !== Object.prototype.toString
+			) {
 				try {
 					return Option.some(_(toString()));
 				} catch (e) {
@@ -192,7 +202,7 @@ export const basic = makeAllRequired({
 	formatter: basicFormatter
 });
 
-export const ansiKeyFormatter = (key: symbol | string): FormattedString.FormattedString =>
+export const ansiKeyFormatter = (key: symbol | string): FormattedString.Type =>
 	pipe(
 		Match.type<symbol | string>(),
 		Match.when(Match.symbol, (sym) =>
@@ -202,7 +212,10 @@ export const ansiKeyFormatter = (key: symbol | string): FormattedString.Formatte
 				Option.flatMap(ReadonlyArray.get(0)),
 				Option.map((s) => _(s, ANSI.magenta)),
 				Option.getOrElse(() =>
-					_("Symbol.prototype.toString should output in format 'Symbol(x)'", ANSI.red)
+					_(
+						"Symbol.prototype.toString should output in format 'Symbol(x)'",
+						ANSI.red
+					)
 				)
 			)
 		),
@@ -210,7 +223,9 @@ export const ansiKeyFormatter = (key: symbol | string): FormattedString.Formatte
 		Match.exhaustive
 	)(key);
 
-export const ansiFormatter = (value: unknown): Option.Option<FormattedString.FormattedString> =>
+export const ansiFormatter = (
+	value: unknown
+): Option.Option<FormattedString.Type> =>
 	pipe(
 		Match.type<MFunction.Unknown>(),
 		Match.when(Match.string, (s) => Option.some(_(s, ANSI.blue))),
