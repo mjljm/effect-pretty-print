@@ -23,12 +23,12 @@ export type objectPropertiesSortMethodType =
 export interface Type {
 	/**
 	 * Whether to show string or symbol properties of objects, or both.
-	 * Default: 'both'
+	 * Default: 'string'
 	 */
 	readonly stringOrSymbolProperties?: stringOrSymbolPropertiesType;
 	/**
 	 * Whether to show enumerable or non-enumerable properties of objects, or both.
-	 * Default: 'both'
+	 * Default: 'enumerable'
 	 */
 	readonly enumerableOrNonEnumarableProperties?: enumerableOrNonEnumarablePropertiesType;
 	/**
@@ -179,8 +179,8 @@ export const basicFormatter = (
 	)(value as MFunction.Unknown);
 
 export const basic = makeAllRequired({
-	stringOrSymbolProperties: 'both',
-	enumerableOrNonEnumarableProperties: 'both',
+	stringOrSymbolProperties: 'string',
+	enumerableOrNonEnumarableProperties: 'enumerable',
 	showFunctions: false,
 	showInherited: true,
 	propertiesSortMethod: 'noSorting',
@@ -219,7 +219,7 @@ export const ansiKeyFormatter = (key: symbol | string): FormattedString.Type =>
 				)
 			)
 		),
-		Match.when(Match.string, (s) => _(s, ANSI.blue)),
+		Match.when(Match.string, (s) => _(s, ANSI.black)),
 		Match.exhaustive
 	)(key);
 

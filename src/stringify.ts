@@ -66,35 +66,40 @@ const internalStringify = (
 		MFunction.isRecordOrArray(u)
 			? MutableHashMap.get(stringified, u)
 			: Option.none(),
-		Option.orElse(() => options.formatter(u)),
 		Option.getOrElse(() =>
 			pipe(
-				Match.type<MFunction.Unknown>(),
-				Match.when(Match.string, (s) => _("'" + s + "'")),
-				Match.when(Match.number, (n) => _(n.toString())),
-				Match.when(Match.bigint, (n) => _(n.toString())),
-				Match.when(Match.boolean, (b) => _(b.toString())),
-				Match.when(Match.symbol, (s) => _(s.toString())),
-				Match.when(Match.undefined, () => _('undefined')),
-				Match.when(Match.null, () => _('null')),
-				Match.when(MMatch.function, () => _('Function()')),
-				Match.when(MMatch.recordOrArray, (obj) =>
-					handleArrayOrObject(
-						obj,
-						stringified,
-						parents,
-						options,
-						currentTab,
-						depth
+				options.formatter(u),
+				Option.getOrElse(() =>
+					pipe(
+						Match.type<MFunction.Unknown>(),
+						Match.when(Match.string, (s) => _("'" + s + "'")),
+						Match.when(Match.number, (n) => _(n.toString())),
+						Match.when(Match.bigint, (n) => _(n.toString())),
+						Match.when(Match.boolean, (b) => _(b.toString())),
+						Match.when(Match.symbol, (s) => _(s.toString())),
+						Match.when(Match.undefined, () => _('undefined')),
+						Match.when(Match.null, () => _('null')),
+						Match.when(MMatch.function, () => _('Function()')),
+						Match.when(MMatch.recordOrArray, (obj) =>
+							handleArrayOrObject(
+								obj,
+								stringified,
+								parents,
+								options,
+								currentTab,
+								depth
+							)
+						),
+						Match.exhaustive,
+						(matcher) => matcher(u),
+						(value) =>
+							MFunction.isRecordOrArray(u)
+								? (MutableHashMap.set(stringified, u, value), value)
+								: value
 					)
-				),
-				Match.exhaustive
-			)(u)
-		),
-		(value) =>
-			MFunction.isRecordOrArray(u)
-				? (MutableHashMap.set(stringified, u, value), value)
-				: value
+				)
+			)
+		)
 	);
 
 const handleArrayOrObject = (
