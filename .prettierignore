@@ -1,0 +1,3 @@
+# Same rules as .git
+dist/
+node_modules/
