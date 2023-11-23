@@ -1,6 +1,6 @@
 import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import * as Property from '#mjljm/effect-pretty-print/Property';
-import { MFunction, MMatch, MStruct } from '@mjljm/effect-lib';
+import { MFunction, MMatch, MString, MStruct } from '@mjljm/effect-lib';
 import { ANSI } from '@mjljm/js-lib';
 import { Match, Option, Order, ReadonlyArray, String, pipe } from 'effect';
 
@@ -10,15 +10,8 @@ export const _ = (s: string, f?: (i: string) => string) =>
 		: FormattedString.makeWithZeroLengthFormatFunction(s, f);
 
 export type stringOrSymbolPropertiesType = 'string' | 'symbol' | 'both';
-export type enumerableOrNonEnumarablePropertiesType =
-	| 'enumerable'
-	| 'nonEnumerable'
-	| 'both';
-export type objectPropertiesSortMethodType =
-	| 'byName'
-	| 'byPrefixedName'
-	| 'byLevelAndName'
-	| 'noSorting';
+export type enumerableOrNonEnumarablePropertiesType = 'enumerable' | 'nonEnumerable' | 'both';
+export type objectPropertiesSortMethodType = 'byName' | 'byPrefixedName' | 'byLevelAndName' | 'noSorting';
 
 export interface Type {
 	/**
@@ -119,9 +112,7 @@ export interface Type {
 	 * Function used to determine if a property must be displayed or not. If the function returns a none, the property is shown if it satisfies the `stringOrSymbolProperties`, `enumerableOrNonEnumarableProperties` and `showFunctions` options. If it returns a some, the `stringOrSymbolProperties`, `enumerableOrNonEnumarableProperties` and `showFunctions` options are ignored and the content of the some determines if the property iis displayed. This option has no incidence on the `showInherited`option that is applied before it.
 	 * Default: ()=>Option.none()
 	 */
-	readonly propertyPredicate?: (
-		property: Property.Property
-	) => Option.Option<boolean>;
+	readonly propertyPredicate?: (property: Property.Property) => Option.Option<boolean>;
 	/**
 	 * Function used to format the keys of an object, e.g add color or modify the way symbols are displayed.
 	 * Default:
@@ -135,12 +126,10 @@ export interface Type {
 	 */
 	readonly keyFormatter?: (key: symbol | string) => FormattedString.Type;
 	/**
-	 * Function used to taylor the pretty print to your needs, e.g change the number of decimals for numbers, change how symbols are printed, add colors, define a special treatment for specific objects...
-	 * Default: a function that calls the toString method on objects that define one different from Object.prototype.toString. This default function is exported under the name defaultFormatter if you want to call iy and modify its output.
+	 * Function used to taylor the pretty print to your needs, e.g change number or symbol format, add colors, define a special treatment for specific objects... If the function returns a some, the value of that some is used as is. If it returns a none, the normal display algorithm is used.
+	 * Default: a function that returns a some of the result of calling the toString method on value provided it defines one different from Object.prototype.toString. If toString is not defined or not overloaded, it returns a some of the result of calling the toJson function on value provided it defines one. If toString and toJson are not defined, returns a none. This default function is exported under the name defaultFormatter if you want to call iy and modify its output.
 	 */
-	readonly formatter?: (
-		value: MFunction.Unknown
-	) => Option.Option<FormattedString.Type>;
+	readonly formatter?: (value: MFunction.Unknown) => Option.Option<FormattedString.Type>;
 }
 
 export const make = MStruct.make<Type>;
@@ -154,27 +143,13 @@ export const basicKeyFormatter = (key: symbol | string): FormattedString.Type =>
 		Match.exhaustive
 	)(key);
 
-export const basicFormatter = (
-	value: unknown
-): Option.Option<FormattedString.Type> =>
+export const basicFormatter = (value: unknown): Option.Option<FormattedString.Type> =>
 	pipe(
 		Match.type<MFunction.Unknown>(),
 		Match.when(MMatch.primitive, () => Option.none()),
 		Match.when(MMatch.function, () => Option.none()),
 		Match.when(MMatch.array, () => Option.none()),
-		Match.when(Match.record, (obj) => {
-			const toString = obj['toString'];
-			if (
-				typeof toString === 'function' &&
-				toString !== Object.prototype.toString
-			) {
-				try {
-					return Option.some(_(toString()));
-				} catch (e) {
-					return Option.none();
-				}
-			} else return Option.none();
-		}),
+		Match.when(Match.record, (obj) => Option.map(MString.toString(obj), (s) => _(s))),
 		Match.exhaustive
 	)(value as MFunction.Unknown);
 
@@ -211,21 +186,14 @@ export const ansiKeyFormatter = (key: symbol | string): FormattedString.Type =>
 				String.match(/^Symbol\((.*)\)$/),
 				Option.flatMap(ReadonlyArray.get(0)),
 				Option.map((s) => _(s, ANSI.magenta)),
-				Option.getOrElse(() =>
-					_(
-						"Symbol.prototype.toString should output in format 'Symbol(x)'",
-						ANSI.red
-					)
-				)
+				Option.getOrElse(() => _("Symbol.prototype.toString should output in format 'Symbol(x)'", ANSI.red))
 			)
 		),
 		Match.when(Match.string, (s) => _(s, ANSI.black)),
 		Match.exhaustive
 	)(key);
 
-export const ansiFormatter = (
-	value: unknown
-): Option.Option<FormattedString.Type> =>
+export const ansiFormatter = (value: unknown): Option.Option<FormattedString.Type> =>
 	pipe(
 		Match.type<MFunction.Unknown>(),
 		Match.when(Match.string, (s) => Option.some(_(s, ANSI.blue))),
@@ -236,7 +204,8 @@ export const ansiFormatter = (
 		Match.when(Match.undefined, () => Option.some(_('undefined', ANSI.cyan))),
 		Match.when(Match.null, () => Option.some(_('null', ANSI.cyan))),
 		Match.when(MMatch.function, () => Option.some(_('Function()', ANSI.cyan))),
-		Match.when(MMatch.recordOrArray, () => Option.none()),
+		Match.when(MMatch.array, () => Option.none()),
+		Match.when(Match.record, (obj) => Option.map(MString.toString(obj), (s) => _(s))),
 		Match.exhaustive
 	)(value as MFunction.Unknown);
 
