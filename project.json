@@ -1,1 +1,1 @@
-{ "projectType": "library", "projectLibrary": "library" }
+{ "type": "library", "library": "library", "version": "1.0" }
