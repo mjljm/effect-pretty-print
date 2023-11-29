@@ -1,6 +1,6 @@
 import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import * as Property from '#mjljm/effect-pretty-print/Property';
-import { MFunction, MMatch, MString, MStruct } from '@mjljm/effect-lib';
+import { MFunction, MMatch, MString } from '@mjljm/effect-lib';
 import { ANSI } from '@mjljm/js-lib';
 import { Match, Option, Order, ReadonlyArray, String, pipe } from 'effect';
 
@@ -143,8 +143,8 @@ export interface Type {
 	) => Option.Option<FormattedString.Type>;
 }
 
-export const make = MStruct.make<Type>;
-export const makeAllRequired = MStruct.make<Required<Type>>;
+export const make = MFunction.makeReadonly<Type>;
+export const makeAllRequired = MFunction.makeReadonly<Required<Type>>;
 
 export const basicKeyFormatter = (key: symbol | string): FormattedString.Type =>
 	pipe(

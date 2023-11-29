@@ -1,1 +1,15 @@
-{ "type": "library", "library": "library", "version": "1.0" }
+{
+	"type": "package",
+	"library": "library",
+	"version": "1.0",
+	"access": "public",
+	"description": "",
+	"scripts": [],
+	"devDeps": [],
+	"deps": [
+		["@mjljm/js-lib", "workspace:*"],
+		["@mjljm/effect-lib", "workspace:*"],
+		["effect", "*"]
+	],
+	"peerDeps": []
+}

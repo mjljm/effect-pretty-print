@@ -1,4 +1,4 @@
-import { MStruct } from '@mjljm/effect-lib';
+import { MFunction } from '@mjljm/effect-lib';
 import { Order } from 'effect';
 
 /**
@@ -15,7 +15,7 @@ export interface Type {
 	readonly printedLength: number;
 }
 
-export const make = MStruct.make<Type>;
+export const make = MFunction.makeReadonly<Type>;
 
 export const makeFromUnformattedString = (s: string): Type =>
 	make({

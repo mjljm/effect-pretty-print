@@ -1,5 +1,5 @@
 import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
-import { MFunction, MStruct } from '@mjljm/effect-lib';
+import { MFunction } from '@mjljm/effect-lib';
 import { Order } from 'effect';
 
 /**
@@ -16,7 +16,7 @@ export interface Property {
 /**
  * Constructor
  */
-export const make = MStruct.make<Property>;
+export const make = MFunction.makeReadonly<Property>;
 
 /**
  * Orders

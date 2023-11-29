@@ -2,7 +2,7 @@ import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import * as Options from '#mjljm/effect-pretty-print/Options';
 import * as OptionsAndPrecalcs from '#mjljm/effect-pretty-print/OptionsAndPrecalcs';
 import * as Property from '#mjljm/effect-pretty-print/Property';
-import { MFunction, MMatch, MStruct } from '@mjljm/effect-lib';
+import { MFunction, MMatch } from '@mjljm/effect-lib';
 import { Function, Match, Option, ReadonlyArray, identity, pipe } from 'effect';
 
 const _ = Options._;
@@ -16,7 +16,7 @@ export interface SplitObject {
 	readonly marksLength: number;
 	readonly sepsLength: number;
 }
-export const make = MStruct.make<SplitObject>;
+export const make = MFunction.makeReadonly<SplitObject>;
 
 export const stringify = (
 	self: SplitObject,
@@ -56,13 +56,14 @@ export const stringify = (
 		)
 	);
 
-interface MFORLoop<X> {
+interface MFORLoop<out X> {
 	readonly input: X;
 	readonly protoChainLevel: number;
 	readonly prefix: FormattedString.Type;
 }
 
-const MFORLoop = <X>(args: MFORLoop<X>) => MStruct.make<MFORLoop<X>>(args);
+const MFORLoop = <X>(args: MFORLoop<X>) =>
+	MFunction.makeReadonly<MFORLoop<X>>(args);
 
 const isObjectRecordMFORLoop = (
 	l: MFORLoop<unknown>
@@ -74,15 +75,15 @@ export const makeFromObjectRecord = (
 ): SplitObject =>
 	pipe(
 		// Read and filter all properties (own and inherited if requested)
-		MFunction.loopNonRecursive(
+		MFunction.whileDoAccum(
 			MFORLoop<unknown>({
 				input,
 				protoChainLevel: 0,
 				prefix: _('')
 			}),
 			{
-				while: isObjectRecordMFORLoop,
-				body: ({ input, protoChainLevel, prefix }) =>
+				predicate: isObjectRecordMFORLoop,
+				body: ({ input, prefix, protoChainLevel }) =>
 					pipe(
 						input,
 						Reflect.ownKeys,
@@ -104,7 +105,7 @@ export const makeFromObjectRecord = (
 							)
 						)
 					),
-				step: ({ input, protoChainLevel, prefix }) =>
+				step: ({ input, prefix, protoChainLevel }) =>
 					MFORLoop<unknown>({
 						input: options.showInherited
 							? (Object.getPrototypeOf(input) as unknown)
