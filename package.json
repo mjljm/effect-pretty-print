@@ -1,83 +1,41 @@
 {
-	"name": "@mjljm/effect-pretty-print",
-	"version": "1.0.0",
-	"type": "module",
-	"main": "./src/index.ts",
+    "name": "@mjljm/effect-pretty-print",
+    "version": "1.0.0",
+    "type": "module",
+    "main": "./src/index.ts",
 	"module": "./src/index.ts",
-	"exports": {
-		".": {
-			"import": "./src/index.ts"
-		}
-	},
+	"exports": {".":{"import":"./src/index.ts"}},
 	"imports": {
 		"#mjljm/effect-pretty-print/*": {
 			"import": "./src/*.ts"
 		}
 	},
-	"packageManager": "pnpm@8.10.2",
-	"author": "Jérôme MARTIN",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/mjljm/effect-pretty-print"
-	},
-	"bugs": {
-		"url": "https://github.com/mjljm/effect-pretty-print/issues"
-	},
-	"homepage": "https://github.com/mjljm/effect-pretty-print",
-	"description": "",
-	"tags": [
-		"effect",
-		"typescript",
-		"algebraic-data-types",
-		"functional-programming"
-	],
-	"keywords": [
-		"effect",
-		"typescript",
-		"algebraic-data-types",
-		"functional-programming"
-	],
-	"scripts": {
-		"build": "vite build --ssr src/main.ts",
-		"dev": "cross-env DEBUG=true vite-node src/main.ts",
-		"circular": "madge --extensions ts --circular --no-color --no-spinner packages/*/src",
-		"check": "tsc -b tsconfig.json",
-		"lint": "eslint \"packages/*/{src,test,examples}/**/*.ts\"",
-		"lint-fix": "pnpm lint --fix"
-	},
-	"devDependencies": {
-		"@effect/language-service": "^0.0.21",
-		"@html-eslint/eslint-plugin": "^0.21.0",
-		"@html-eslint/parser": "^0.21.0",
-		"@mjljm/configs": "workspace:*",
-		"@types/eslint": "^8.44.7",
-		"@types/eslint-config-prettier": "^6.11.3",
-		"@types/eslint__js": "^8.42.3",
-		"@typescript-eslint/eslint-plugin": "^6.13.1",
-		"@typescript-eslint/parser": "^6.13.1",
-		"cross-env": "^7.0.3",
-		"eslint": "^8.54.0",
-		"eslint-config-prettier": "^9.0.0",
-		"eslint-import-resolver-typescript": "^3.6.1",
-		"eslint-plugin-codegen": "^0.21.0",
-		"eslint-plugin-deprecation": "^2.0.0",
-		"eslint-plugin-import": "^2.29.0",
-		"eslint-plugin-markdown": "^3.0.1",
-		"eslint-plugin-yml": "^1.10.0",
-		"fast-check": "^3.14.0",
-		"madge": "^6.1.0",
-		"npm-check-updates": "^16.14.11",
-		"prettier": "^3.1.0",
-		"terser": "^5.24.0",
-		"typescript": "^5.3.2",
-		"vite": "^5.0.4",
-		"vite-node": "^0.34.6",
-		"vitest": "^0.34.6"
-	},
-	"dependencies": {
-		"@mjljm/effect-lib": "workspace:*",
-		"@mjljm/js-lib": "workspace:*",
-		"effect": "2.0.0-next.56"
-	}
-}
+    "packageManager": "pnpm@8.11.0",
+    "author": "Jérôme MARTIN",
+    "license": "MIT",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/mjljm/effect-pretty-print"
+    },
+    "bugs": {
+      "url": "https://github.com/mjljm/effect-pretty-print/issues"
+    },
+    "homepage": "https://github.com/mjljm/effect-pretty-print",
+    "description": "",
+    "tags": [
+      "effect",
+      "typescript",
+      "algebraic-data-types",
+      "functional-programming"
+    ],
+    "keywords": [
+      "effect",
+      "typescript",
+      "algebraic-data-types",
+      "functional-programming"
+    ],
+    "scripts": {"build":"vite build --ssr src/main.ts","dev":"cross-env DEBUG=true vite-node src/main.ts","circular":"madge --extensions ts --circular --no-color --no-spinner packages/*/src","check":"tsc -b tsconfig.json","lint":"eslint \"packages/*/{src,test,examples}/**/*.ts\"","lint-fix":"pnpm lint --fix","clean-pnpm-cache":"rimraf node_modules"},
+    "devDependencies": {"@effect/language-service":"*","eslint":"*","eslint-config-prettier":"*","@html-eslint/eslint-plugin":"*","@html-eslint/parser":"*","@typescript-eslint/eslint-plugin":"*","@typescript-eslint/parser":"*","eslint-import-resolver-typescript":"*","eslint-plugin-codegen":"*","eslint-plugin-deprecation":"*","eslint-plugin-import":"*","eslint-plugin-markdown":"*","eslint-plugin-yml":"*","@types/eslint":"*","@types/eslint-config-prettier":"*","@types/eslint__js":"*","prettier":"*","cross-env":"*","fast-check":"*","madge":"*","npm-check-updates":"*","rimraf":"*","terser":"*","typescript":"*","vite":"*","vite-node":"*","vitest":"*","@mjljm/configs":"workspace:*"},
+    "dependencies": {"@mjljm/js-lib":"workspace:*","@mjljm/effect-lib":"workspace:*","effect":"*"},
+    "peerDependencies": {}
+  }
