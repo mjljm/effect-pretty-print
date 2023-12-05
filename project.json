@@ -1,6 +1,5 @@
 {
 	"type": "package",
-	"library": "library",
 	"version": "1.0.0",
 	"access": "public",
 	"description": "",

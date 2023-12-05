@@ -2,7 +2,7 @@ import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import * as Options from '#mjljm/effect-pretty-print/Options';
 import * as OptionsAndPrecalcs from '#mjljm/effect-pretty-print/OptionsAndPrecalcs';
 import * as SplitObject from '#mjljm/effect-pretty-print/SplitObject';
-import { MFunction, MMatch } from '@mjljm/effect-lib';
+import { GraphOrigin, MFunction, MMatch } from '@mjljm/effect-lib';
 import {
 	HashSet,
 	Match,
@@ -44,17 +44,68 @@ export const stringify = (u: unknown, options?: Options.Type) =>
 					optionsWithDefaultValues.arrayEndMark.printedLength
 			}),
 		(optionsWithDefaultsAndPrecalcs) =>
-			internalStringify(
-				u as MFunction.Unknown,
-				MutableHashMap.empty<MFunction.RecordOrArray, FormattedString.Type>(),
-				HashSet.empty<MFunction.RecordOrArray>(),
-				optionsWithDefaultsAndPrecalcs,
-				optionsWithDefaultsAndPrecalcs.initialTab,
-				0
-			)
+			GraphOrigin.flatten({
+				handleSpecialNode: (a) => optionsWithDefaultsAndPrecalcs.formatter(a),
+				handleCircularNode: (a) => _('Circular'),
+				handleNode: 1,
+				split: (a)=)> pipe(
+					SplitObject.makeFromArrayOrObjectRecord(a, optionsWithDefaultsAndPrecalcs),
+					(split) =>
+						pipe(
+							Tuple.make(
+								HashSet.add(parents, obj),
+								FormattedString.append(options.tab)(currentTab),
+								split.properties.length > 0 ? split.separator.printedLength : 0
+							),
+							([newParents, newTab, sepLength]) =>
+								pipe(
+									split.properties,
+									ReadonlyArray.mapAccum(0, (acc, property) =>
+										pipe(
+											internalStringify(
+												property.value,
+												stringified,
+												newParents,
+												options,
+												newTab,
+												depth + 1
+											),
+											(s) =>
+												Tuple.make(
+													acc +
+														property.prefixedKey.printedLength +
+														split.sepsLength +
+														s.printedLength,
+													s
+												),
+										)
+									),
+									([length, values]) =>
+										length - sepLength + split.marksLength <=
+										options.noLineBreakIfShorterThan
+											? SplitObject.stringify(
+													split,
+													values,
+													_(''),
+													currentTab,
+													_(''),
+													depth
+											  )
+											: SplitObject.stringify(
+													split,
+													values,
+													options.linebreak,
+													currentTab,
+													options.tab,
+													depth
+											  )
+								)
+						)
+				)
+			})
 	);
 
-const internalStringify = (
+const internalStringify1 = (
 	u: MFunction.Unknown,
 	stringified: ObjectCache,
 	parents: HashSet.HashSet<MFunction.RecordOrArray>,

@@ -208,12 +208,12 @@ export const makeFromArray = (
 			})
 	);
 
-export const makeFromArrayOrObjectRecord = (
+export const makeFromUnknown = (
 	input: MFunction.RecordOrArray,
 	options: OptionsAndPrecalcs.Type
 ): SplitObject =>
 	pipe(
-		Match.type<MFunction.RecordOrArray>(),
+		Match.type<MFunction.Unknown>(),
 		Match.when(MMatch.array, (arr) => makeFromArray(arr, options)),
 		Match.when(Match.record, (obj) => makeFromObjectRecord(obj, options)),
 		Match.exhaustive
