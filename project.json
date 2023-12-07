@@ -8,7 +8,8 @@
 	"deps": [
 		["@mjljm/js-lib", "workspace:*"],
 		["@mjljm/effect-lib", "workspace:*"],
-		["effect", "*"]
+		["effect", "*"],
+		["@effect/typeclass", "*"]
 	],
 	"peerDeps": []
 }

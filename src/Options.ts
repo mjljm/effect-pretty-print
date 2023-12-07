@@ -20,6 +20,32 @@ export type objectPropertiesSortMethodType =
 	| 'byLevelAndName'
 	| 'noSorting';
 
+interface ComplexTypeFormat {
+	/**
+	 * String to use as mark for array/object start
+	 */
+	readonly startMark: FormattedString.Type;
+	/**
+	 * String to use as mark for array/object end
+	 */
+	readonly endMark: FormattedString.Type;
+	/**
+	 * String to use as separator between values when displaying an array/object
+	 */
+	readonly separator: FormattedString.Type;
+}
+
+export interface ArrayFormat extends ComplexTypeFormat {}
+export const ArrayFormat = MFunction.makeReadonly<ArrayFormat>;
+
+export interface ObjectFormat extends ComplexTypeFormat {
+	/**
+	 * String to use as separator between key and value when displaying an object
+	 */
+	readonly propertySeparator: FormattedString.Type;
+}
+export const ObjectFormat = MFunction.makeReadonly<ObjectFormat>;
+
 export interface Type {
 	/**
 	 * Whether to show string or symbol properties of objects, or both.
@@ -76,40 +102,15 @@ export interface Type {
 	 */
 	readonly prototypePrefix?: FormattedString.Type;
 	/**
-	 * String to use as separator between key and value when displaying an object
-	 * Default: ': '
+	 * Strings to use to format an object
+	 * Default: ['{','}',',',': ']
 	 */
-	readonly objectPropertySeparator?: FormattedString.Type;
+	readonly objectFormat?: ObjectFormat;
 	/**
-	 * String to use as mark for object start
-	 * Default: '{'
+	 * Strings to use to format an array
+	 * Default: ['[',']',',']
 	 */
-	readonly objectStartMark?: FormattedString.Type;
-	/**
-	 * String to use as mark for object end
-	 * Default: '}'
-	 */
-	readonly objectEndMark?: FormattedString.Type;
-	/**
-	 * String to use as separator between key/value pairs when displaying an object
-	 * Default: ','
-	 */
-	readonly objectSeparator?: FormattedString.Type;
-	/**
-	 * String to use as mark for array start
-	 * Default: '['
-	 */
-	readonly arrayStartMark?: FormattedString.Type;
-	/**
-	 * String to use as mark for array end
-	 * Default: ']'
-	 */
-	readonly arrayEndMark?: FormattedString.Type;
-	/**
-	 * String to use as separator between values when displaying an array
-	 * Default: ','
-	 */
-	readonly arraySeparator?: FormattedString.Type;
+	readonly arrayFormat?: ArrayFormat;
 	/**
 	 * Any object or array shorter than `noLineBreakIfShorterThan` will be printed on a single line without tabs. If inferior or equal to 0, objects and arrays, even empty, are always split on multiple lines.
 	 * Default: 40
@@ -120,7 +121,7 @@ export interface Type {
 	 * Default: ()=>Option.none()
 	 */
 	readonly propertyPredicate?: (
-		property: Property.Property
+		property: Property.Type
 	) => Option.Option<boolean>;
 	/**
 	 * Function used to format the keys of an object, e.g add color or modify the way symbols are displayed.
@@ -179,13 +180,17 @@ export const basic = makeAllRequired({
 	initialTab: _(''),
 	linebreak: _('\n'),
 	prototypePrefix: _('proto.'),
-	objectPropertySeparator: _(': '),
-	objectStartMark: _('{'),
-	objectEndMark: _('}'),
-	objectSeparator: _(','),
-	arrayStartMark: _('['),
-	arrayEndMark: _(']'),
-	arraySeparator: _(','),
+	objectFormat: ObjectFormat({
+		startMark: _('{'),
+		endMark: _('}'),
+		separator: _(','),
+		propertySeparator: _(':')
+	}),
+	arrayFormat: ArrayFormat({
+		startMark: _('['),
+		endMark: _(']'),
+		separator: _(',')
+	}),
 	noLineBreakIfShorterThan: 40,
 	propertyPredicate: () => Option.none(),
 	keyFormatter: basicKeyFormatter,
@@ -235,13 +240,17 @@ export const ansiFormatter = (
 
 export const ansi = make({
 	initialTab: _('  '),
-	objectStartMark: _('{', ANSI.green),
-	objectEndMark: _('}', ANSI.green),
-	objectPropertySeparator: _(': ', ANSI.green),
-	objectSeparator: _(',', ANSI.green),
-	arrayStartMark: _('[', ANSI.green),
-	arrayEndMark: _(']', ANSI.green),
-	arraySeparator: _(',', ANSI.green),
+	objectFormat: ObjectFormat({
+		startMark: _('{', ANSI.green),
+		endMark: _('}', ANSI.green),
+		separator: _(',', ANSI.green),
+		propertySeparator: _(': ', ANSI.green)
+	}),
+	arrayFormat: ArrayFormat({
+		startMark: _('[', ANSI.green),
+		endMark: _(']', ANSI.green),
+		separator: _(',', ANSI.green)
+	}),
 	keyFormatter: ansiKeyFormatter,
 	formatter: ansiFormatter
 });

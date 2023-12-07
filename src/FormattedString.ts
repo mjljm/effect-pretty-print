@@ -1,5 +1,7 @@
+import * as TCNumber from '@effect/typeclass/data/Number';
+import * as TCString from '@effect/typeclass/data/String';
 import { MFunction } from '@mjljm/effect-lib';
-import { Order } from 'effect';
+import { Function, Order, ReadonlyArray, String, pipe } from 'effect';
 
 /**
  * A string that may contain format characters, e.g css styles or unicode characters
@@ -23,6 +25,8 @@ export const makeFromUnformattedString = (s: string): Type =>
 		printedLength: s.length
 	});
 
+export const empty = () => makeFromUnformattedString('');
+
 export const makeWithZeroLengthFormatFunction = (
 	s: string,
 	f: (i: string) => string
@@ -32,43 +36,88 @@ export const makeWithZeroLengthFormatFunction = (
 		printedLength: s.length
 	});
 
-export const append =
-	(s: Type) =>
-	(self: Type): Type =>
-		make({
-			value: self.value + s.value,
-			printedLength: self.printedLength + s.printedLength
-		});
+export const concat = (...sArr: ReadonlyArray<Type>): Type =>
+	make({
+		value: pipe(
+			sArr,
+			ReadonlyArray.map((s) => s.value),
+			TCString.Monoid.combineAll
+		),
 
-export const prepend =
-	(s: Type) =>
-	(self: Type): Type =>
-		make({
-			value: s.value + self.value,
-			printedLength: s.printedLength + self.printedLength
-		});
+		printedLength: pipe(
+			sArr,
+			ReadonlyArray.map((s) => s.printedLength),
+			TCNumber.MonoidSum.combineAll
+		)
+	});
 
-export const appendUnformattedString =
-	(s: string) =>
-	(self: Type): Type =>
+export const appendUnformattedString: {
+	(...sArr: ReadonlyArray<string>): (self: Type) => Type;
+	(self: Type, ...sArr: ReadonlyArray<string>): Type;
+} = Function.dual(
+	2,
+	(self: Type, ...sArr: ReadonlyArray<string>): Type =>
 		make({
-			value: self.value + s,
-			printedLength: self.printedLength + s.length
-		});
+			value: pipe(
+				sArr,
+				ReadonlyArray.prepend(self.value),
+				TCString.Monoid.combineAll
+			),
 
-export const prependUnformattedString =
-	(s: string) =>
-	(self: Type): Type =>
+			printedLength: pipe(
+				sArr,
+				ReadonlyArray.map((s) => s.length),
+				ReadonlyArray.append(self.printedLength),
+				TCNumber.MonoidSum.combineAll
+			)
+		})
+);
+
+export const prependUnformattedString: {
+	(...sArr: ReadonlyArray<string>): (self: Type) => Type;
+	(self: Type, ...sArr: ReadonlyArray<string>): Type;
+} = Function.dual(
+	2,
+	(self: Type, ...sArr: ReadonlyArray<string>): Type =>
 		make({
-			value: s + self.value,
-			printedLength: s.length + self.printedLength
-		});
+			value: pipe(
+				sArr,
+				ReadonlyArray.append(self.value),
+				TCString.Monoid.combineAll
+			),
 
-/*export const repeat =
-	(n: number) =>
-	(self: Type): Type => ({
+			printedLength: pipe(
+				sArr,
+				ReadonlyArray.map((s) => s.length),
+				ReadonlyArray.append(self.printedLength),
+				TCNumber.MonoidSum.combineAll
+			)
+		})
+);
+
+export const join =
+	(sep: Type) =>
+	(sArr: Iterable<Type>): Type => {
+		let first = true;
+		let result = empty();
+		for (const s of sArr) {
+			result = concat(result, first ? s : concat(sep, s));
+			first = false;
+		}
+		return result;
+	};
+
+export const repeat: {
+	(n: number): (self: Type) => Type;
+	(self: Type, n: number): Type;
+} = Function.dual(
+	2,
+	(self: Type, n: number): Type => ({
 		value: String.repeat(n)(self.value),
 		printedLength: n * self.printedLength
-	});*/
+	})
+);
 
-export const byValue = Order.mapInput(Order.string, (s: Type) => s.value);
+export const isEmpty = (self: Type): boolean => self.printedLength === 0;
+
+export const order = Order.mapInput(Order.string, (s: Type) => s.value);
