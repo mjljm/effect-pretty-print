@@ -2,14 +2,16 @@ import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import * as Options from '#mjljm/effect-pretty-print/Options';
 import * as Properties from '#mjljm/effect-pretty-print/Properties';
 import * as Property from '#mjljm/effect-pretty-print/Property';
-import { MFunction, MMatch, Tree } from '@mjljm/effect-lib';
+import { MError, MFunction, MMatch, Tree } from '@mjljm/effect-lib';
 import { Chunk, Data, Equivalence, Match, Option, Tuple, pipe } from 'effect';
 
+const moduleTag = '@mjljm/effect-pretty-print/stringify/';
 const _ = Options._;
 
-class Node extends Data.Class<{
+class TreeValue extends Data.Class<{
 	readonly value: Option.Option<FormattedString.Type>;
 	readonly key: FormattedString.Type;
+	readonly type: 'Array' | 'Object' | 'Other';
 }> {}
 
 /**
@@ -18,34 +20,102 @@ class Node extends Data.Class<{
  * @param u The object to print
  *
  */
-export const stringify = (u: unknown, options?: Options.Type) =>
+export const stringify = (
+	u: unknown,
+	options?: Options.Type
+): FormattedString.Type =>
 	pipe(
 		// Default options
 		Options.basic,
 		// Merge with user's options
 		(defaultOptions) =>
 			Options.makeAllRequired({ ...defaultOptions, ...options }),
-		(finalOptions) =>
-			pipe(
+		(finalOptions) => {
+			const formatProperty = (
+				key: FormattedString.Type,
+				value: FormattedString.Type
+			): FormattedString.Type =>
+				FormattedString.isEmpty(key)
+					? value
+					: FormattedString.concat(
+							key,
+							finalOptions.objectFormat.propertySeparator,
+							value
+					  );
+
+			const formatFunctionOrPrimitive = (
+				value: MFunction.Primitive | MFunction.Function
+			) =>
+				pipe(
+					Match.type<MFunction.Primitive | MFunction.Function>(),
+					Match.when(Match.string, (s) => _("'" + s + "'")),
+					Match.when(Match.number, (n) => _(n.toString())),
+					Match.when(Match.bigint, (n) => _(n.toString())),
+					Match.when(Match.boolean, (b) => _(b.toString())),
+					Match.when(Match.symbol, (s) => _(s.toString())),
+					Match.when(Match.undefined, () => _('undefined')),
+					Match.when(Match.null, () => _('null')),
+					Match.when(MMatch.function, () => _('Function()')),
+					Match.exhaustive
+				)(value);
+
+			const formatObjectOrArray = (
+				father: TreeValue,
+				properties: Properties.Type,
+				withLineBreaks: boolean,
+				level: number
+			) =>
+				pipe(
+					father.type === 'Object'
+						? finalOptions.objectFormat
+						: finalOptions.arrayFormat,
+					(format) =>
+						withLineBreaks
+							? {
+									startMark: FormattedString.concat(
+										format.startMark,
+										finalOptions.linebreak
+									),
+									endMark: FormattedString.concat(
+										finalOptions.linebreak,
+										format.endMark
+									),
+									separator: FormattedString.concat(
+										format.separator,
+										finalOptions.linebreak
+									),
+									tab: FormattedString.concat(
+										finalOptions.initialTab,
+										FormattedString.repeat(finalOptions.tab, level)
+									)
+							  }
+							: { ...format, tab: _('') },
+					(format) =>
+						FormattedString.concat(
+							finalOptions.initialTab,
+							FormattedString.repeat(finalOptions.tab, level),
+							parent.prefixedKey,
+							finalOptions.objectFormat.propertySeparator,
+							format.startMark,
+							pipe(transformedChildren, FormattedString.join(format.separator)),
+							format.endMark
+						)
+				);
+
+			return pipe(
 				Tree.unfoldTree(
 					Property.Type.makeFromValue(u as MFunction.Unknown),
 					(parent, isCircular) => {
-						const noChildren = (value: FormattedString.Type) =>
+						const noChildren = (value: FormattedString) =>
 							Tuple.make(
-								new Node({
-									value: Option.some(
-										FormattedString.isEmpty(parent.prefixedKey)
-											? value
-											: FormattedString.concat(
-													parent.prefixedKey,
-													finalOptions.objectFormat.propertySeparator,
-													value
-											  )
-									),
-									key: parent.prefixedKey
+								new TreeValue({
+									value: Option.some(formatProperty(parent.prefixedKey, value)),
+									key: parent.prefixedKey,
+									type: 'Other'
 								}),
 								Chunk.empty<Property.Type>()
 							);
+
 						return isCircular
 							? noChildren(_('Circular'))
 							: pipe(
@@ -56,39 +126,26 @@ export const stringify = (u: unknown, options?: Options.Type) =>
 											Match.type<MFunction.Unknown>(),
 											Match.when(Match.record, (obj) =>
 												Tuple.make(
-													new Node({
+													new TreeValue({
 														value: Option.none(),
-														key: parent.prefixedKey
+														key: parent.prefixedKey,
+														type: 'Object'
 													}),
 													Properties.fromRecord(obj, finalOptions)
 												)
 											),
 											Match.when(MMatch.array, (arr) =>
 												Tuple.make(
-													new Node({
+													new TreeValue({
 														value: Option.none(),
-														key: parent.prefixedKey
+														key: parent.prefixedKey,
+														type: 'Array'
 													}),
 													Properties.fromArray(arr)
 												)
 											),
 											Match.orElse((value) =>
-												noChildren(
-													pipe(
-														Match.type<
-															MFunction.Primitive | MFunction.Function
-														>(),
-														Match.when(Match.string, (s) => _("'" + s + "'")),
-														Match.when(Match.number, (n) => _(n.toString())),
-														Match.when(Match.bigint, (n) => _(n.toString())),
-														Match.when(Match.boolean, (b) => _(b.toString())),
-														Match.when(Match.symbol, (s) => _(s.toString())),
-														Match.when(Match.undefined, () => _('undefined')),
-														Match.when(Match.null, () => _('null')),
-														Match.when(MMatch.function, () => _('Function()')),
-														Match.exhaustive
-													)(value)
-												)
+												noChildren(formatFunctionOrPrimitive(value))
 											)
 										)(parent.value)
 									)
@@ -99,92 +156,41 @@ export const stringify = (u: unknown, options?: Options.Type) =>
 						(self: Property.Type, that: Property.Type) =>
 							self.value === that.value
 					)
-				)
-				/*
-				
-				GraphWithOrigin.foldWith(
-					Property.makeFromValue(u as MFunction.Unknown),
-					{
-						transformLeavesGetChildren: (parent) =>
-							Option.match(finalOptions.formatter(parent.value), {
-								onNone: () =>
-									pipe(
-										Match.type<MFunction.Unknown>(),
-										// Get record children
-										Match.when(Match.record, (obj) =>
-											Either.right(Properties.fromRecord(obj, finalOptions))
-										),
-										// Get array children
-										Match.when(MMatch.array, (arr) =>
-											Either.right(Properties.fromArray(arr))
-										),
-										// Transform leaves
-										Match.orElse((value) =>
-											Either.left(
-												pipe(
-													Tuple.make(
-														parent.prefixedKey,
-														pipe(
-															Match.type<
-																MFunction.Primitive | MFunction.Function
-															>(),
-															Match.when(Match.string, (s) => _("'" + s + "'")),
-															Match.when(Match.number, (n) => _(n.toString())),
-															Match.when(Match.bigint, (n) => _(n.toString())),
-															Match.when(Match.boolean, (b) => _(b.toString())),
-															Match.when(Match.symbol, (s) => _(s.toString())),
-															Match.when(Match.undefined, () => _('undefined')),
-															Match.when(Match.null, () => _('null')),
-															Match.when(MMatch.function, () =>
-																_('Function()')
-															),
-															Match.exhaustive
-														)(value)
-													),
-													([key, value]) =>
-														FormattedString.isEmpty(key)
-															? value
-															: FormattedString.concat(
-																	parent.value === u
-																		? finalOptions.initialTab
-																		: FormattedString.empty(),
-																	key,
-																	finalOptions.objectFormat.propertySeparator,
-																	value
-															  )
-												)
-											)
-										)
-									)(parent.value),
-								onSome: (v) => Either.left(v)
-							}),
-						concatenateChildren: (parent, transformedChildren, level) =>
+				),
+				// Using extendUp instead of fold allows us to not process twice the same nodes
+				Tree.extendUp((node, level) =>
+					pipe(
+						node.value.value,
+						Option.orElse(() =>
 							pipe(
-								MFunction.isRecord(parent.value)
-									? finalOptions.objectFormat
-									: finalOptions.arrayFormat,
-								(format) =>
+								node.forest,
+								Chunk.map((child) =>
 									pipe(
-										FormattedString.concat(
-											finalOptions.initialTab,
-											FormattedString.repeat(finalOptions.tab, level),
-											parent.prefixedKey,
-											finalOptions.objectFormat.propertySeparator,
-											format.startMark,
-											pipe(
-												transformedChildren,
-												FormattedString.join(format.separator)
-											),
-											format.endMark
-										),
-										(s) =>
-											s.printedLength > finalOptions.noLineBreakIfShorterThan
-												? s
-												: s
+										child.value.value,
+										Option.getOrThrowWith(
+											() =>
+												new MError.General({
+													message: `Abnormal error while stringifying in ${moduleTag}. \
+												Children should have already been calculated.`
+												})
+										)
 									)
-							),
-						circular: () => _('Circular')
-					}
-				)*/
-			)
+								),
+								FormattedString.join(_(',')),
+								Option.some
+							)
+						)
+					)
+				),
+				(topNode) =>
+					Option.getOrThrowWith(
+						topNode.value,
+						() =>
+							new MError.General({
+								message: `Abnormal error while stringifying in ${moduleTag}. \
+						Top node should have been calculated.`
+							})
+					)
+			);
+		}
 	);

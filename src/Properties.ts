@@ -12,7 +12,7 @@ import {
 	pipe
 } from 'effect';
 
-export type Type = ReadonlyArray<Property.Type>;
+export type Type = Chunk.Chunk<Property.Type>;
 
 export const fromArray = (input: MFunction.Array): Chunk.Chunk<Property.Type> =>
 	pipe(

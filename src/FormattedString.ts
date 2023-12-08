@@ -24,17 +24,16 @@ export class Type extends Data.Class<{
 	 */
 	readonly printedLength: number;
 }> {
-	public static makeFromUnformattedString = (s: string): Type =>
-		new Type({
-			value: s,
-			printedLength: s.length
-		});
 	[Equal.symbol] = (that: Equal.Equal): boolean =>
 		that instanceof Type ? Equal.equals(this.value, that.value) : false;
 	[Hash.symbol] = (): number => Hash.hash(this.value);
 }
 
-export const empty = () => Type.makeFromUnformattedString('');
+export const makeFromUnformattedString = (s: string): Type =>
+	new Type({
+		value: s,
+		printedLength: s.length
+	});
 
 export const makeWithZeroLengthFormatFunction = (
 	s: string,
@@ -44,6 +43,8 @@ export const makeWithZeroLengthFormatFunction = (
 		value: f(s),
 		printedLength: s.length
 	});
+
+export const empty = () => makeFromUnformattedString('');
 
 export const concat = (...sArr: ReadonlyArray<Type>): Type =>
 	new Type({
