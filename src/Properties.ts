@@ -18,7 +18,9 @@ export const fromArray = (input: MFunction.Array): Chunk.Chunk<Property.Type> =>
 	pipe(
 		input,
 		Chunk.unsafeFromArray,
-		Chunk.map((value) => Property.makeFromValue(value as MFunction.Unknown))
+		Chunk.map((value) =>
+			Property.Type.makeFromValue(value as MFunction.Unknown)
+		)
 	);
 
 export const fromRecord = (
@@ -30,7 +32,7 @@ export const fromRecord = (
 			options.showInherited
 				? pipe(Object.getPrototypeOf(previous) as unknown, (proto) =>
 						MFunction.isRecord(proto)
-							? Option.some(Tuple.make(previous, proto))
+							? Option.some(Tuple.make(proto, proto))
 							: Option.none()
 				  )
 				: Option.none()
@@ -50,7 +52,7 @@ export const fromRecord = (
 							pipe(
 								options.keyFormatter(key),
 								(formattedKey) =>
-									Property.make({
+									new Property.Type({
 										originalKey: key,
 										key: formattedKey,
 										prefixedKey: FormattedString.concat(prefix, formattedKey),

@@ -1,12 +1,20 @@
 import * as TCNumber from '@effect/typeclass/data/Number';
 import * as TCString from '@effect/typeclass/data/String';
-import { MFunction } from '@mjljm/effect-lib';
-import { Function, Order, ReadonlyArray, String, pipe } from 'effect';
+import {
+	Data,
+	Equal,
+	Function,
+	Hash,
+	Order,
+	ReadonlyArray,
+	String,
+	pipe
+} from 'effect';
 
 /**
  * A string that may contain format characters, e.g css styles or unicode characters
  */
-export interface Type {
+export class Type extends Data.Class<{
 	/**
 	 * The underlying string
 	 */
@@ -15,29 +23,30 @@ export interface Type {
 	 * The length of the printable characters, i.e excluding all formatting characters
 	 */
 	readonly printedLength: number;
+}> {
+	public static makeFromUnformattedString = (s: string): Type =>
+		new Type({
+			value: s,
+			printedLength: s.length
+		});
+	[Equal.symbol] = (that: Equal.Equal): boolean =>
+		that instanceof Type ? Equal.equals(this.value, that.value) : false;
+	[Hash.symbol] = (): number => Hash.hash(this.value);
 }
 
-export const make = MFunction.makeReadonly<Type>;
-
-export const makeFromUnformattedString = (s: string): Type =>
-	make({
-		value: s,
-		printedLength: s.length
-	});
-
-export const empty = () => makeFromUnformattedString('');
+export const empty = () => Type.makeFromUnformattedString('');
 
 export const makeWithZeroLengthFormatFunction = (
 	s: string,
 	f: (i: string) => string
 ): Type =>
-	make({
+	new Type({
 		value: f(s),
 		printedLength: s.length
 	});
 
 export const concat = (...sArr: ReadonlyArray<Type>): Type =>
-	make({
+	new Type({
 		value: pipe(
 			sArr,
 			ReadonlyArray.map((s) => s.value),
@@ -57,7 +66,7 @@ export const appendUnformattedString: {
 } = Function.dual(
 	2,
 	(self: Type, ...sArr: ReadonlyArray<string>): Type =>
-		make({
+		new Type({
 			value: pipe(
 				sArr,
 				ReadonlyArray.prepend(self.value),
@@ -79,7 +88,7 @@ export const prependUnformattedString: {
 } = Function.dual(
 	2,
 	(self: Type, ...sArr: ReadonlyArray<string>): Type =>
-		make({
+		new Type({
 			value: pipe(
 				sArr,
 				ReadonlyArray.append(self.value),
@@ -112,10 +121,11 @@ export const repeat: {
 	(self: Type, n: number): Type;
 } = Function.dual(
 	2,
-	(self: Type, n: number): Type => ({
-		value: String.repeat(n)(self.value),
-		printedLength: n * self.printedLength
-	})
+	(self: Type, n: number): Type =>
+		new Type({
+			value: String.repeat(n)(self.value),
+			printedLength: n * self.printedLength
+		})
 );
 
 export const isEmpty = (self: Type): boolean => self.printedLength === 0;

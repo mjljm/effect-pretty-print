@@ -1,32 +1,34 @@
 import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import * as Options from '#mjljm/effect-pretty-print/Options';
 import { MFunction } from '@mjljm/effect-lib';
-import { Order } from 'effect';
+import { Data, Equal, Hash, Order } from 'effect';
 
 const _ = Options._;
 /**
  * Model
  */
-export interface Type {
+export class Type extends Data.Class<{
 	readonly originalKey: string | symbol;
 	readonly key: FormattedString.Type;
 	readonly prefixedKey: FormattedString.Type;
 	readonly value: MFunction.Unknown;
 	readonly level: number;
-}
+}> {
+	public static makeFromValue = (value: MFunction.Unknown) =>
+		new Type({
+			originalKey: '',
+			key: _(''),
+			prefixedKey: _(''),
+			value,
+			level: 0
+		});
 
-/**
- * Constructor
- */
-export const make = MFunction.makeReadonly<Type>;
-export const makeFromValue = (value: MFunction.Unknown) =>
-	make({
-		originalKey: '',
-		key: _(''),
-		prefixedKey: _(''),
-		value,
-		level: 0
-	});
+	[Equal.symbol] = (that: Equal.Equal): boolean =>
+		that instanceof Type
+			? Equal.equals(this.prefixedKey, that.prefixedKey)
+			: false;
+	[Hash.symbol] = (): number => Hash.hash(this.prefixedKey);
+}
 
 /**
  * Orders
