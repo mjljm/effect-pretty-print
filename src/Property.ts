@@ -14,21 +14,21 @@ export class Type extends Data.Class<{
 	readonly value: MFunction.Unknown;
 	readonly level: number;
 }> {
-	public static makeFromValue = (value: MFunction.Unknown) =>
-		new Type({
-			originalKey: '',
-			key: _(''),
-			prefixedKey: _(''),
-			value,
-			level: 0
-		});
-
 	[Equal.symbol] = (that: Equal.Equal): boolean =>
 		that instanceof Type
 			? Equal.equals(this.prefixedKey, that.prefixedKey)
 			: false;
 	[Hash.symbol] = (): number => Hash.hash(this.prefixedKey);
 }
+
+export const makeFromValue = (value: MFunction.Unknown) =>
+	new Type({
+		originalKey: '',
+		key: _(''),
+		prefixedKey: _(''),
+		value,
+		level: 0
+	});
 
 /**
  * Orders

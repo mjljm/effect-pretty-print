@@ -2,17 +2,30 @@ import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import * as Options from '#mjljm/effect-pretty-print/Options';
 import * as Properties from '#mjljm/effect-pretty-print/Properties';
 import * as Property from '#mjljm/effect-pretty-print/Property';
-import { MError, MFunction, MMatch, Tree } from '@mjljm/effect-lib';
+import { MFunction, MMatch, Tree } from '@mjljm/effect-lib';
 import { Chunk, Data, Equivalence, Match, Option, Tuple, pipe } from 'effect';
 
-const moduleTag = '@mjljm/effect-pretty-print/stringify/';
+//const moduleTag = '@mjljm/effect-pretty-print/stringify/';
 const _ = Options._;
 
-class TreeValue extends Data.Class<{
-	readonly value: Option.Option<FormattedString.Type>;
+interface BaseNode {
 	readonly key: FormattedString.Type;
-	readonly type: 'Array' | 'Object' | 'Other';
-}> {}
+}
+
+class Node extends Data.Class<
+	BaseNode & {
+		readonly type: 'Array' | 'Object';
+	}
+> {}
+
+class Leaf extends Data.Class<
+	BaseNode & {
+		readonly value:
+			| MFunction.Primitive
+			| MFunction.Function
+			| FormattedString.Type;
+	}
+> {}
 
 /**
  * Pretty prints an object.
@@ -43,30 +56,33 @@ export const stringify = (
 							value
 					  );
 
-			const formatFunctionOrPrimitive = (
-				value: MFunction.Primitive | MFunction.Function
-			) =>
-				pipe(
-					Match.type<MFunction.Primitive | MFunction.Function>(),
-					Match.when(Match.string, (s) => _("'" + s + "'")),
-					Match.when(Match.number, (n) => _(n.toString())),
-					Match.when(Match.bigint, (n) => _(n.toString())),
-					Match.when(Match.boolean, (b) => _(b.toString())),
-					Match.when(Match.symbol, (s) => _(s.toString())),
-					Match.when(Match.undefined, () => _('undefined')),
-					Match.when(Match.null, () => _('null')),
-					Match.when(MMatch.function, () => _('Function()')),
-					Match.exhaustive
-				)(value);
+			const formatLeaf = (leaf: Leaf) =>
+				formatProperty(
+					leaf.key,
+					leaf.value instanceof FormattedString.Type
+						? leaf.value
+						: pipe(
+								Match.type<MFunction.Primitive | MFunction.Function>(),
+								Match.when(Match.string, (s) => _("'" + s + "'")),
+								Match.when(Match.number, (n) => _(n.toString())),
+								Match.when(Match.bigint, (n) => _(n.toString())),
+								Match.when(Match.boolean, (b) => _(b.toString())),
+								Match.when(Match.symbol, (s) => _(s.toString())),
+								Match.when(Match.undefined, () => _('undefined')),
+								Match.when(Match.null, () => _('null')),
+								Match.when(MMatch.function, () => _('Function()')),
+								Match.exhaustive
+						  )(leaf.value)
+				);
 
-			const formatObjectOrArray = (
-				father: TreeValue,
-				properties: Properties.Type,
+			const formatNode = (
+				node: Node,
+				children: Chunk.Chunk<FormattedString.Type>,
 				withLineBreaks: boolean,
 				level: number
-			) =>
+			): FormattedString.Type =>
 				pipe(
-					father.type === 'Object'
+					node.type === 'Object'
 						? finalOptions.objectFormat
 						: finalOptions.arrayFormat,
 					(format) =>
@@ -91,43 +107,45 @@ export const stringify = (
 							  }
 							: { ...format, tab: _('') },
 					(format) =>
-						FormattedString.concat(
-							finalOptions.initialTab,
-							FormattedString.repeat(finalOptions.tab, level),
-							parent.prefixedKey,
-							finalOptions.objectFormat.propertySeparator,
-							format.startMark,
-							pipe(transformedChildren, FormattedString.join(format.separator)),
-							format.endMark
+						formatProperty(
+							node.key,
+							FormattedString.concat(
+								format.startMark,
+								pipe(children, FormattedString.join(format.separator)),
+								format.endMark
+							)
 						)
 				);
 
 			return pipe(
-				Tree.unfoldTree(
-					Property.Type.makeFromValue(u as MFunction.Unknown),
+				Tree.unfoldTree<Node | Leaf, Property.Type>(
+					Property.makeFromValue(u as MFunction.Unknown),
 					(parent, isCircular) => {
-						const noChildren = (value: FormattedString) =>
+						const makeLeaf = (
+							key: FormattedString.Type,
+							value:
+								| MFunction.Primitive
+								| MFunction.Function
+								| FormattedString.Type
+						) =>
 							Tuple.make(
-								new TreeValue({
-									value: Option.some(formatProperty(parent.prefixedKey, value)),
-									key: parent.prefixedKey,
-									type: 'Other'
+								new Leaf({
+									key,
+									value
 								}),
 								Chunk.empty<Property.Type>()
 							);
-
 						return isCircular
-							? noChildren(_('Circular'))
+							? makeLeaf(parent.prefixedKey, _('Circular'))
 							: pipe(
 									finalOptions.formatter(parent.value),
-									Option.map((value) => noChildren(value)),
+									Option.map((value) => makeLeaf(parent.prefixedKey, value)),
 									Option.getOrElse(() =>
 										pipe(
 											Match.type<MFunction.Unknown>(),
 											Match.when(Match.record, (obj) =>
 												Tuple.make(
-													new TreeValue({
-														value: Option.none(),
+													new Node({
 														key: parent.prefixedKey,
 														type: 'Object'
 													}),
@@ -136,8 +154,7 @@ export const stringify = (
 											),
 											Match.when(MMatch.array, (arr) =>
 												Tuple.make(
-													new TreeValue({
-														value: Option.none(),
+													new Node({
 														key: parent.prefixedKey,
 														type: 'Array'
 													}),
@@ -145,7 +162,7 @@ export const stringify = (
 												)
 											),
 											Match.orElse((value) =>
-												noChildren(formatFunctionOrPrimitive(value))
+												makeLeaf(parent.prefixedKey, value)
 											)
 										)(parent.value)
 									)
@@ -157,40 +174,17 @@ export const stringify = (
 							self.value === that.value
 					)
 				),
-				// Using extendUp instead of fold allows us to not process twice the same nodes
-				Tree.extendUp((node, level) =>
-					pipe(
-						node.value.value,
-						Option.orElse(() =>
-							pipe(
-								node.forest,
-								Chunk.map((child) =>
-									pipe(
-										child.value.value,
-										Option.getOrThrowWith(
-											() =>
-												new MError.General({
-													message: `Abnormal error while stringifying in ${moduleTag}. \
-												Children should have already been calculated.`
-												})
-										)
-									)
-								),
-								FormattedString.join(_(',')),
-								Option.some
-							)
-						)
-					)
-				),
-				(topNode) =>
-					Option.getOrThrowWith(
-						topNode.value,
-						() =>
-							new MError.General({
-								message: `Abnormal error while stringifying in ${moduleTag}. \
-						Top node should have been calculated.`
-							})
-					)
+				Tree.fold<Node | Leaf, FormattedString.Type>(
+					(value, children, level) =>
+						value instanceof Leaf
+							? formatLeaf(value)
+							: pipe(formatNode(value, children, false, level), (formatted) =>
+									formatted.printedLength <=
+									finalOptions.noLineBreakIfShorterThan
+										? formatted
+										: formatNode(value, children, true, level)
+							  )
+				)
 			);
 		}
 	);

@@ -22,15 +22,15 @@ export type objectPropertiesSortMethodType =
 
 interface ComplexTypeFormat {
 	/**
-	 * String to use as mark for array/object start
+	 * String to use as mark for array/object start.
 	 */
 	readonly startMark: FormattedString.Type;
 	/**
-	 * String to use as mark for array/object end
+	 * String to use as mark for array/object end.
 	 */
 	readonly endMark: FormattedString.Type;
 	/**
-	 * String to use as separator between values when displaying an array/object
+	 * String to use as separator between values when displaying an array/object.
 	 */
 	readonly separator: FormattedString.Type;
 }
@@ -40,7 +40,7 @@ export const ArrayFormat = MFunction.makeReadonly<ArrayFormat>;
 
 export interface ObjectFormat extends ComplexTypeFormat {
 	/**
-	 * String to use as separator between key and value when displaying an object
+	 * String to use as separator between key and value when displaying an object.
 	 */
 	readonly propertySeparator: FormattedString.Type;
 }
@@ -69,7 +69,7 @@ export interface Type {
 	readonly showInherited?: boolean;
 	/**
 	 * How to sort objet properties. Possible values are:
-	 * - byName: all properties (own and inherited if showInherited is true) are sorted alphabetically on propertie's formatted name, that is the name of the property as it results from the propertyFormatter function
+	 * - byName: all properties (own and inherited if showInherited is true) are sorted alphabetically on propertie's formatted name, that is the name of the property as it results from the propertyFormatter function.
 	 * - byPrefixedName: all properties (own and inherited if showInherited is true) are sorted alphabetically on propertie's prefixed formatted name. See `prototypePrefix` option for more information.
 	 * - byLevelAndName: first own properties sorted alphabetically, then prototype's properties sorted alphabetically, then...
 	 * - noSorting: first own properties in the order they are provided by Reflect.ownKeys, then prototype's properties in the order they are provided by Reflect.ownKeys, then...
@@ -77,7 +77,7 @@ export interface Type {
 	 */
 	readonly propertiesSortMethod?: objectPropertiesSortMethodType;
 	/**
-	 * Order to use to sort object properties (only when sortObjectProperties === true)
+	 * Order to use to sort object properties (only when sortObjectProperties === true).
 	 * Default: string as defined in Effect Order
 	 */
 	readonly propertieSortOrder?: Order.Order<string>;
@@ -97,17 +97,17 @@ export interface Type {
 	 */
 	readonly linebreak?: FormattedString.Type;
 	/**
-	 * String to use as prefix for properties inherited from the prototype chain. This prefix will be repeated as many times as the depth of the property in the prototype chain
+	 * String to use as prefix for properties inherited from the prototype chain. This prefix will be repeated as many times as the depth of the property in the prototype chain.
 	 * Default: 'proto.'
 	 */
 	readonly prototypePrefix?: FormattedString.Type;
 	/**
-	 * Strings to use to format an object
+	 * Strings to use to format an object.
 	 * Default: ['{','}',',',': ']
 	 */
 	readonly objectFormat?: ObjectFormat;
 	/**
-	 * Strings to use to format an array
+	 * Strings to use to format an array.
 	 * Default: ['[',']',',']
 	 */
 	readonly arrayFormat?: ArrayFormat;
