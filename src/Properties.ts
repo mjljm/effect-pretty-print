@@ -18,9 +18,7 @@ export const fromArray = (input: MFunction.Array): Chunk.Chunk<Property.Type> =>
 	pipe(
 		input,
 		Chunk.unsafeFromArray,
-		Chunk.map((value) =>
-			Property.Type.makeFromValue(value as MFunction.Unknown)
-		)
+		Chunk.map((value) => Property.makeFromValue(value as MFunction.Unknown))
 	);
 
 export const fromRecord = (

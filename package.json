@@ -59,6 +59,7 @@
 		"eslint-plugin-codegen": "*",
 		"eslint-plugin-deprecation": "*",
 		"eslint-plugin-import": "*",
+		"eslint-plugin-sort-destructure-keys": "*",
 		"eslint-plugin-markdown": "*",
 		"eslint-plugin-yml": "*",
 		"@types/eslint": "*",

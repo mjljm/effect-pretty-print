@@ -3,7 +3,7 @@ import * as Options from '#mjljm/effect-pretty-print/Options';
 import * as Properties from '#mjljm/effect-pretty-print/Properties';
 import * as Property from '#mjljm/effect-pretty-print/Property';
 import { MFunction, MMatch, Tree } from '@mjljm/effect-lib';
-import { Chunk, Data, Equivalence, Match, Option, Tuple, pipe } from 'effect';
+import { Chunk, Data, Match, Option, Tuple, pipe } from 'effect';
 
 //const moduleTag = '@mjljm/effect-pretty-print/stringify/';
 const _ = Options._;
@@ -56,24 +56,21 @@ export const stringify = (
 							value
 					  );
 
-			const formatLeaf = (leaf: Leaf) =>
-				formatProperty(
-					leaf.key,
-					leaf.value instanceof FormattedString.Type
-						? leaf.value
-						: pipe(
-								Match.type<MFunction.Primitive | MFunction.Function>(),
-								Match.when(Match.string, (s) => _("'" + s + "'")),
-								Match.when(Match.number, (n) => _(n.toString())),
-								Match.when(Match.bigint, (n) => _(n.toString())),
-								Match.when(Match.boolean, (b) => _(b.toString())),
-								Match.when(Match.symbol, (s) => _(s.toString())),
-								Match.when(Match.undefined, () => _('undefined')),
-								Match.when(Match.null, () => _('null')),
-								Match.when(MMatch.function, () => _('Function()')),
-								Match.exhaustive
-						  )(leaf.value)
-				);
+			const formatLeaf = (leaf: Leaf): FormattedString.Type =>
+				leaf.value instanceof FormattedString.Type
+					? leaf.value
+					: pipe(
+							Match.type<MFunction.Primitive | MFunction.Function>(),
+							Match.when(Match.string, (s) => _("'" + s + "'")),
+							Match.when(Match.number, (n) => _(n.toString())),
+							Match.when(Match.bigint, (n) => _(n.toString())),
+							Match.when(Match.boolean, (b) => _(b.toString())),
+							Match.when(Match.symbol, (s) => _(s.toString())),
+							Match.when(Match.undefined, () => _('undefined')),
+							Match.when(Match.null, () => _('null')),
+							Match.when(MMatch.function, () => _('Function()')),
+							Match.exhaustive
+					  )(leaf.value);
 
 			const formatNode = (
 				node: Node,
@@ -87,40 +84,49 @@ export const stringify = (
 						: finalOptions.arrayFormat,
 					(format) =>
 						withLineBreaks
-							? {
-									startMark: FormattedString.concat(
-										format.startMark,
-										finalOptions.linebreak
-									),
-									endMark: FormattedString.concat(
-										finalOptions.linebreak,
-										format.endMark
-									),
-									separator: FormattedString.concat(
-										format.separator,
-										finalOptions.linebreak
-									),
-									tab: FormattedString.concat(
+							? pipe(
+									FormattedString.concat(
 										finalOptions.initialTab,
 										FormattedString.repeat(finalOptions.tab, level)
-									)
-							  }
-							: { ...format, tab: _('') },
+									),
+									(currentTab) => ({
+										currentTab,
+										nextTab: FormattedString.concat(
+											currentTab,
+											finalOptions.tab
+										)
+									}),
+									({ currentTab, nextTab }) => ({
+										startMark: FormattedString.concat(
+											format.startMark,
+											finalOptions.linebreak,
+											nextTab
+										),
+										endMark: FormattedString.concat(
+											finalOptions.linebreak,
+											currentTab,
+											format.endMark
+										),
+										separator: FormattedString.concat(
+											format.separator,
+											finalOptions.linebreak,
+											nextTab
+										)
+									})
+							  )
+							: format,
 					(format) =>
-						formatProperty(
-							node.key,
-							FormattedString.concat(
-								format.startMark,
-								pipe(children, FormattedString.join(format.separator)),
-								format.endMark
-							)
+						FormattedString.concat(
+							format.startMark,
+							pipe(children, FormattedString.join(format.separator)),
+							format.endMark
 						)
 				);
 
 			return pipe(
 				Tree.unfoldTree<Node | Leaf, Property.Type>(
 					Property.makeFromValue(u as MFunction.Unknown),
-					(parent, isCircular) => {
+					(nextSeed, isCircular) => {
 						const makeLeaf = (
 							key: FormattedString.Type,
 							value:
@@ -136,17 +142,17 @@ export const stringify = (
 								Chunk.empty<Property.Type>()
 							);
 						return isCircular
-							? makeLeaf(parent.prefixedKey, _('Circular'))
+							? makeLeaf(nextSeed.prefixedKey, _('Circular'))
 							: pipe(
-									finalOptions.formatter(parent.value),
-									Option.map((value) => makeLeaf(parent.prefixedKey, value)),
+									finalOptions.formatter(nextSeed.value),
+									Option.map((value) => makeLeaf(nextSeed.prefixedKey, value)),
 									Option.getOrElse(() =>
 										pipe(
 											Match.type<MFunction.Unknown>(),
 											Match.when(Match.record, (obj) =>
 												Tuple.make(
 													new Node({
-														key: parent.prefixedKey,
+														key: nextSeed.prefixedKey,
 														type: 'Object'
 													}),
 													Properties.fromRecord(obj, finalOptions)
@@ -155,27 +161,28 @@ export const stringify = (
 											Match.when(MMatch.array, (arr) =>
 												Tuple.make(
 													new Node({
-														key: parent.prefixedKey,
+														key: nextSeed.prefixedKey,
 														type: 'Array'
 													}),
 													Properties.fromArray(arr)
 												)
 											),
 											Match.orElse((value) =>
-												makeLeaf(parent.prefixedKey, value)
+												makeLeaf(nextSeed.prefixedKey, value)
 											)
-										)(parent.value)
+										)(nextSeed.value)
 									)
 							  );
 					},
-					true,
-					Equivalence.make(
+					true
+					/*Equivalence.make(
 						(self: Property.Type, that: Property.Type) =>
 							self.value === that.value
-					)
+					)*/
 				),
-				Tree.fold<Node | Leaf, FormattedString.Type>(
-					(value, children, level) =>
+				Tree.fold<Node | Leaf, FormattedString.Type>((value, children, level) =>
+					formatProperty(
+						value.key,
 						value instanceof Leaf
 							? formatLeaf(value)
 							: pipe(formatNode(value, children, false, level), (formatted) =>
@@ -184,6 +191,7 @@ export const stringify = (
 										? formatted
 										: formatNode(value, children, true, level)
 							  )
+					)
 				)
 			);
 		}

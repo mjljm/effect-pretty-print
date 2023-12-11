@@ -14,10 +14,9 @@ export class Type extends Data.Class<{
 	readonly value: MFunction.Unknown;
 	readonly level: number;
 }> {
+	// For circularity and memoization, use value object as equality
 	[Equal.symbol] = (that: Equal.Equal): boolean =>
-		that instanceof Type
-			? Equal.equals(this.prefixedKey, that.prefixedKey)
-			: false;
+		that instanceof Type ? this.value === that.value : false;
 	[Hash.symbol] = (): number => Hash.hash(this.prefixedKey);
 }
 
