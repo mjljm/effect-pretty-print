@@ -2,8 +2,8 @@ import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import * as Options from '#mjljm/effect-pretty-print/Options';
 import * as Properties from '#mjljm/effect-pretty-print/Properties';
 import * as Property from '#mjljm/effect-pretty-print/Property';
-import { MFunction, MMatch, Tree } from '@mjljm/effect-lib';
-import { Chunk, Data, Match, Option, Tuple, pipe } from 'effect';
+import { MEither, MFunction, MMatch, Tree } from '@mjljm/effect-lib';
+import { Chunk, Data, Either, Match, Option, Tuple, pipe } from 'effect';
 
 //const moduleTag = '@mjljm/effect-pretty-print/stringify/';
 const _ = Options._;
@@ -124,7 +124,7 @@ export const stringify = (
 				);
 
 			return pipe(
-				Tree.unfoldTree<Node | Leaf, Property.Type>(
+				Tree.unfoldEither<never, Node | Leaf, Property.Type>(
 					Property.makeFromValue(u as MFunction.Unknown),
 					(nextSeed, isCircular) => {
 						const makeLeaf = (
@@ -134,12 +134,14 @@ export const stringify = (
 								| MFunction.Function
 								| FormattedString.Type
 						) =>
-							Tuple.make(
-								new Leaf({
-									key,
-									value
-								}),
-								Chunk.empty<Property.Type>()
+							Either.right(
+								Tuple.make(
+									new Leaf({
+										key,
+										value
+									}),
+									Chunk.empty<Property.Type>()
+								)
 							);
 						return isCircular
 							? makeLeaf(nextSeed.prefixedKey, _('Circular'))
@@ -150,21 +152,25 @@ export const stringify = (
 										pipe(
 											Match.type<MFunction.Unknown>(),
 											Match.when(Match.record, (obj) =>
-												Tuple.make(
-													new Node({
-														key: nextSeed.prefixedKey,
-														type: 'Object'
-													}),
-													Properties.fromRecord(obj, finalOptions)
+												Either.right(
+													Tuple.make(
+														new Node({
+															key: nextSeed.prefixedKey,
+															type: 'Object'
+														}),
+														Properties.fromRecord(obj, finalOptions)
+													)
 												)
 											),
 											Match.when(MMatch.array, (arr) =>
-												Tuple.make(
-													new Node({
-														key: nextSeed.prefixedKey,
-														type: 'Array'
-													}),
-													Properties.fromArray(arr)
+												Either.right(
+													Tuple.make(
+														new Node({
+															key: nextSeed.prefixedKey,
+															type: 'Array'
+														}),
+														Properties.fromArray(arr)
+													)
 												)
 											),
 											Match.orElse((value) =>
@@ -180,6 +186,7 @@ export const stringify = (
 							self.value === that.value
 					)*/
 				),
+				MEither.getRightWhenNoLeft,
 				Tree.fold<Node | Leaf, FormattedString.Type>((value, children, level) =>
 					formatProperty(
 						value.key,
