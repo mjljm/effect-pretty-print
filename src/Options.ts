@@ -171,7 +171,7 @@ export const basicFormatter = (
 
 export const basic = makeAllRequired({
 	stringOrSymbolProperties: 'string',
-	enumerableOrNonEnumarableProperties: 'enumerable',
+	enumerableOrNonEnumarableProperties: 'both',
 	showFunctions: false,
 	showInherited: true,
 	propertiesSortMethod: 'noSorting',
