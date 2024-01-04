@@ -6,13 +6,13 @@ import { Function, Match, Option, ReadonlyArray, Tuple, pipe } from 'effect';
 
 export type Type = ReadonlyArray<Property.Type>;
 
-export const fromArray = (input: MFunction.Array): ReadonlyArray<Property.Type> =>
+export const fromArray = (input: MFunction.Array): Array<Property.Type> =>
 	pipe(
 		input,
 		ReadonlyArray.map((value) => Property.makeFromValue(value as MFunction.Unknown))
 	);
 
-export const fromRecord = (input: MFunction.Record, options: Required<Options.Type>): ReadonlyArray<Property.Type> =>
+export const fromRecord = (input: MFunction.Record, options: Required<Options.Type>): Array<Property.Type> =>
 	pipe(
 		// Get proto chain
 		ReadonlyArray.unfold(input, (previous) =>
@@ -32,7 +32,7 @@ export const fromRecord = (input: MFunction.Record, options: Required<Options.Ty
 				ReadonlyArray.filterMap((key) => {
 					const formattedKey = options.keyFormatter(key);
 					return pipe(
-						Property.Type({
+						Property.make({
 							originalKey: key,
 							key: formattedKey,
 							prefixedKey: FormattedString.concat(prefix, formattedKey),
@@ -76,6 +76,6 @@ const sort = (options: Required<Options.Type>) => (self: ReadonlyArray<Property.
 		Match.when('byName', () => ReadonlyArray.sort(Property.byKey)(self)),
 		Match.when('byPrefixedName', () => ReadonlyArray.sort(Property.byPrefixedKey)(self)),
 		Match.when('byLevelAndName', () => ReadonlyArray.sort(Property.byLevelAndKey)(self)),
-		Match.when('noSorting', () => self),
+		Match.when('noSorting', () => self as Array<Property.Type>),
 		Match.exhaustive
 	)(options.propertiesSortMethod);

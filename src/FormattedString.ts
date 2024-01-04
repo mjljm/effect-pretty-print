@@ -1,6 +1,7 @@
 import * as TCNumber from '@effect/typeclass/data/Number';
 import * as TCString from '@effect/typeclass/data/String';
-import { Equal, Function, Hash, Order, Predicate, ReadonlyArray, String, pipe } from 'effect';
+import { MFunction } from '@mjljm/effect-lib';
+import { Equal, Function, Hash, Order, ReadonlyArray, String, pipe } from 'effect';
 
 const moduleTag = '@mjljm/effect-pretty-print/FormattedString/';
 
@@ -26,7 +27,7 @@ export interface Type extends Equal.Equal {
 /**
  * Type guards
  */
-export const isType = (u: unknown): u is Type => Predicate.hasProperty(u, TypeId);
+export const isType = MFunction.isOfId<Type>(TypeId);
 
 /**
  * Constructors
@@ -41,15 +42,7 @@ const prototype = {
 	}
 };
 
-const make = ({
-	printedLength,
-	value
-}: Readonly<Omit<Type, TypeId | typeof Equal.symbol | typeof Hash.symbol>>): Type =>
-	Object.create(prototype, {
-		[TypeId]: { value: TypeId },
-		value: { value },
-		printedLength: { value: printedLength }
-	}) as Type;
+export const make = MFunction.makeWithId<Type>(TypeId, prototype);
 
 export const makeFromUnformattedString = (s: string): Type =>
 	make({

@@ -1,7 +1,7 @@
 import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import * as Options from '#mjljm/effect-pretty-print/Options';
 import { MFunction } from '@mjljm/effect-lib';
-import { Equal, Hash, Order, Predicate } from 'effect';
+import { Equal, Hash, Order } from 'effect';
 
 const moduleTag = '@mjljm/effect-pretty-print/Property/';
 
@@ -24,37 +24,23 @@ export interface Type extends Equal.Equal {
 /**
  * Type guards
  */
-export const isType = (u: unknown): u is Type => Predicate.hasProperty(u, TypeId);
+export const isType = MFunction.isOfId<Type>(TypeId);
 
 /**
  * Constructors
  */
 
 const prototype = {
-	// For circularity and memoization, use value object as equality
+	// For circularity and memoization, check equality on values. If values are objects, object reference is used.
 	[Equal.symbol](this: Type, that: Equal.Equal): boolean {
-		return isType(that) ? Equal.equals(this.value, that.value) : false;
+		return isType(that) ? this.value === that.value : false;
 	},
 	[Hash.symbol](this: Type): number {
 		return Hash.hash(this.value);
 	}
 };
 
-export const make = ({
-	key,
-	level,
-	originalKey,
-	prefixedKey,
-	value
-}: Readonly<Omit<Type, TypeId | typeof Equal.symbol | typeof Hash.symbol>>): Type =>
-	Object.create(prototype, {
-		[TypeId]: { value: TypeId },
-		originalKey: { value: originalKey },
-		key: { value: key },
-		prefixedKey: { value: prefixedKey },
-		value: { value },
-		level: { value: level }
-	}) as Type;
+export const make = MFunction.makeWithId<Type>(TypeId, prototype);
 
 export const makeFromValue = (value: MFunction.Unknown) =>
 	make({
