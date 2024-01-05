@@ -3,18 +3,19 @@ import * as Options from '#mjljm/effect-pretty-print/Options';
 import * as Properties from '#mjljm/effect-pretty-print/Properties';
 import * as Property from '#mjljm/effect-pretty-print/Property';
 import { MFunction, MMatch, Tree } from '@mjljm/effect-lib';
-import { Match, Option, ReadonlyArray, Tuple, pipe } from 'effect';
+import { Function, Match, Option, ReadonlyArray, Tuple, pipe } from 'effect';
 
 //const moduleTag = '@mjljm/effect-pretty-print/stringify/';
 
 const _ = Options._;
 
+const CIRCULAR = 'Circular';
 /**
  * Model
  */
 interface Node {
 	readonly key: FormattedString.Type;
-	readonly formatOrValue: Options.ComplexTypeFormat | FormattedString.Type;
+	readonly formatParams: Options.ComplexTypeFormat | FormattedString.Type | MFunction.Primitive | MFunction.Function;
 }
 
 /**
@@ -57,16 +58,21 @@ export function stringify(u: unknown, options?: Options.Type): FormattedString.T
 		withLineBreaks: boolean,
 		level: number
 	): FormattedString.Type {
-		const currentTab = FormattedString.concat(finalOptions.initialTab, FormattedString.repeat(finalOptions.tab, level));
-
-		const nextTab = FormattedString.concat(currentTab, finalOptions.tab);
-
 		const format = withLineBreaks
-			? {
-					startMark: FormattedString.concat(baseFormat.startMark, finalOptions.linebreak, nextTab),
-					endMark: FormattedString.concat(finalOptions.linebreak, currentTab, baseFormat.endMark),
-					separator: FormattedString.concat(baseFormat.separator, finalOptions.linebreak, nextTab)
-			  }
+			? pipe(
+					FormattedString.concat(finalOptions.initialTab, FormattedString.repeat(finalOptions.tab, level)),
+					(currentTab) => Tuple.make(currentTab, FormattedString.concat(currentTab, finalOptions.tab)),
+					([currentTab, nextTab]) => ({
+						startMark: FormattedString.concat(
+							level === 0 ? currentTab : FormattedString.empty(),
+							baseFormat.startMark,
+							finalOptions.linebreak,
+							nextTab
+						),
+						endMark: FormattedString.concat(finalOptions.linebreak, currentTab, baseFormat.endMark),
+						separator: FormattedString.concat(baseFormat.separator, finalOptions.linebreak, nextTab)
+					})
+			  )
 			: baseFormat;
 
 		return FormattedString.concat(
@@ -78,29 +84,38 @@ export function stringify(u: unknown, options?: Options.Type): FormattedString.T
 
 	return pipe(
 		Tree.unfold({
-			seed: Property.makeFromValue(u as MFunction.Unknown),
-			unfoldfunction: (nextSeed, isCircular) => {
-				const makeLeaf = (key: FormattedString.Type, value: FormattedString.Type) =>
+			seed: Property.makeFromValue(Function.unsafeCoerce<unknown, MFunction.Unknown>(u)),
+			unfoldfunction: ({ key, value }, isCircular) => {
+				const makeLeaf = (
+					key: FormattedString.Type,
+					value: FormattedString.Type | MFunction.Primitive | MFunction.Function
+				) =>
 					Tuple.make(
 						Node({
 							key,
-							formatOrValue: value
+							formatParams: value
 						}),
 						ReadonlyArray.empty<Property.Type>()
 					);
 				return isCircular
-					? makeLeaf(nextSeed.prefixedKey, _('Circular'))
+					? makeLeaf(
+							key,
+							pipe(
+								finalOptions.formatter(CIRCULAR),
+								Option.getOrElse(() => CIRCULAR)
+							)
+					  )
 					: pipe(
-							finalOptions.formatter(nextSeed.value),
-							Option.map((value) => makeLeaf(nextSeed.prefixedKey, value)),
+							finalOptions.formatter(value),
+							Option.map((formattedValue) => makeLeaf(key, formattedValue)),
 							Option.getOrElse(() =>
 								pipe(
 									Match.type<MFunction.Unknown>(),
 									Match.when(Match.record, (obj) =>
 										Tuple.make(
 											Node({
-												key: nextSeed.prefixedKey,
-												formatOrValue: finalOptions.objectFormat
+												key,
+												formatParams: finalOptions.objectFormat
 											}),
 											Properties.fromRecord(obj, finalOptions)
 										)
@@ -108,29 +123,33 @@ export function stringify(u: unknown, options?: Options.Type): FormattedString.T
 									Match.when(MMatch.array, (arr) =>
 										Tuple.make(
 											Node({
-												key: nextSeed.prefixedKey,
-												formatOrValue: finalOptions.arrayFormat
+												key,
+												formatParams: finalOptions.arrayFormat
 											}),
 											Properties.fromArray(arr)
 										)
 									),
-									Match.orElse((value) => makeLeaf(nextSeed.prefixedKey, formatSimpleValue(value)))
-								)(nextSeed.value)
+									Match.orElse((primitiveOrFunction) => makeLeaf(key, primitiveOrFunction))
+								)(value)
 							)
 					  );
 			},
 			memoize: true
 		}),
-		Tree.fold(({ formatOrValue, key }, transformedChildren, level) =>
+		Tree.fold(({ formatParams, key }, formattedChildren, level) =>
 			formatProperty(
 				key,
-				FormattedString.isType(formatOrValue)
-					? formatOrValue
-					: pipe(formatComplexValue(formatOrValue, transformedChildren, false, level), (formatted) =>
-							formatted.printedLength <= finalOptions.noLineBreakIfShorterThan
-								? formatted
-								: formatComplexValue(formatOrValue, transformedChildren, true, level)
-					  )
+				FormattedString.isType(formatParams)
+					? formatParams
+					: MFunction.isPrimitive(formatParams) || MFunction.isFunction(formatParams)
+					  ? formatSimpleValue(formatParams)
+					  : finalOptions.noLineBreakIfShorterThan === 0
+					    ? formatComplexValue(formatParams, formattedChildren, true, level)
+					    : pipe(
+									formatComplexValue(formatParams, formattedChildren, false, level),
+									Option.liftPredicate((formatted) => formatted.printedLength <= finalOptions.noLineBreakIfShorterThan),
+									Option.getOrElse(() => formatComplexValue(formatParams, formattedChildren, true, level))
+					      )
 			)
 		)
 	);

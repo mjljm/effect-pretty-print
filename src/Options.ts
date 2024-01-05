@@ -2,7 +2,7 @@ import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import * as Property from '#mjljm/effect-pretty-print/Property';
 import { MFunction, MMatch, MString } from '@mjljm/effect-lib';
 import { ANSI } from '@mjljm/js-lib';
-import { Match, Option, Order, ReadonlyArray, String, pipe } from 'effect';
+import { Match, Option, ReadonlyArray, String, pipe } from 'effect';
 
 export const _ = (s: string, f?: (i: string) => string) =>
 	f === undefined
@@ -11,7 +11,6 @@ export const _ = (s: string, f?: (i: string) => string) =>
 
 export type stringOrSymbolPropertiesType = 'string' | 'symbol' | 'both';
 export type enumerableOrNonEnumarablePropertiesType = 'enumerable' | 'nonEnumerable' | 'both';
-export type objectPropertiesSortMethodType = 'byName' | 'byPrefixedName' | 'byLevelAndName' | 'noSorting';
 
 export interface ComplexTypeFormat {
 	/**
@@ -57,23 +56,14 @@ export interface Type {
 	readonly showFunctions?: boolean;
 	/**
 	 * Whether to show inherited properties of the prototype chain.
+	 * Default: false
+	 */
+	readonly showPrototype?: boolean;
+	/**
+	 * Whether to sort object properties.
 	 * Default: true
 	 */
-	readonly showInherited?: boolean;
-	/**
-	 * How to sort objet properties. Possible values are:
-	 * - byName: all properties (own and inherited if showInherited is true) are sorted alphabetically on propertie's formatted name, that is the name of the property as it results from the propertyFormatter function.
-	 * - byPrefixedName: all properties (own and inherited if showInherited is true) are sorted alphabetically on propertie's prefixed formatted name. See `prototypePrefix` option for more information.
-	 * - byLevelAndName: first own properties sorted alphabetically, then prototype's properties sorted alphabetically, then...
-	 * - noSorting: first own properties in the order they are provided by Reflect.ownKeys, then prototype's properties in the order they are provided by Reflect.ownKeys, then...
-	 * Default: noSorting
-	 */
-	readonly propertiesSortMethod?: objectPropertiesSortMethodType;
-	/**
-	 * Order to use to sort object properties (only when sortObjectProperties === true).
-	 * Default: string as defined in Effect Order
-	 */
-	readonly propertieSortOrder?: Order.Order<string>;
+	readonly sortObjectProperties?: boolean;
 	/**
 	 * String to use as tab applied to indent objects and arrays contents.
 	 * Default: '  ' (two spaces)
@@ -90,11 +80,6 @@ export interface Type {
 	 */
 	readonly linebreak?: FormattedString.Type;
 	/**
-	 * String to use as prefix for properties inherited from the prototype chain. This prefix will be repeated as many times as the depth of the property in the prototype chain.
-	 * Default: 'proto.'
-	 */
-	readonly prototypePrefix?: FormattedString.Type;
-	/**
 	 * Strings to use to format an object.
 	 * Default: ['{','}',',',': ']
 	 */
@@ -110,12 +95,12 @@ export interface Type {
 	 */
 	readonly noLineBreakIfShorterThan?: number;
 	/**
-	 * Function used to determine if a property must be displayed or not. If the function returns a none, the property is shown if it satisfies the `stringOrSymbolProperties`, `enumerableOrNonEnumarableProperties` and `showFunctions` options. If it returns a some, the `stringOrSymbolProperties`, `enumerableOrNonEnumarableProperties` and `showFunctions` options are ignored and the content of the some determines if the property iis displayed. This option has no incidence on the `showInherited`option that is applied before it.
+	 * Function used to determine if a property must be displayed or not. If the function returns a none, the property is shown if it satisfies the `stringOrSymbolProperties`, `enumerableOrNonEnumarableProperties` and `showFunctions` options. If it returns a some, the `stringOrSymbolProperties`, `enumerableOrNonEnumarableProperties` and `showFunctions` options are ignored and the content of the some determines if the property is displayed.
 	 * Default: ()=>Option.none()
 	 */
-	readonly propertyPredicate?: (property: Property.Type) => Option.Option<boolean>;
+	readonly propertyFilter?: (property: Property.Type) => Option.Option<boolean>;
 	/**
-	 * Function used to format the keys of an object, e.g add color or modify the way symbols are displayed.
+	 * Function used to format the keys of an object, e.g add color or modify the way symbols are displayed. If `showPrototype` is set, this function will receive a '[[Prototpe]]' key.
 	 * Default:
 	 *	(key: symbol | string):FormattedString.Type =>
 	 *			pipe(
@@ -156,15 +141,13 @@ export const basicFormatter = (value: unknown): Option.Option<FormattedString.Ty
 
 export const basic = makeAllRequired({
 	stringOrSymbolProperties: 'string',
-	enumerableOrNonEnumarableProperties: 'both',
+	enumerableOrNonEnumarableProperties: 'enumerable',
 	showFunctions: false,
-	showInherited: true,
-	propertiesSortMethod: 'noSorting',
-	propertieSortOrder: Order.string,
+	showPrototype: false,
+	sortObjectProperties: true,
 	tab: _('  '),
 	initialTab: _(''),
 	linebreak: _('\n'),
-	prototypePrefix: _('proto.'),
 	objectFormat: ObjectFormat({
 		startMark: _('{'),
 		endMark: _('}'),
@@ -177,7 +160,7 @@ export const basic = makeAllRequired({
 		separator: _(',')
 	}),
 	noLineBreakIfShorterThan: 40,
-	propertyPredicate: () => Option.none(),
+	propertyFilter: () => Option.none(),
 	keyFormatter: basicKeyFormatter,
 	formatter: basicFormatter
 });
@@ -215,7 +198,6 @@ export const ansiFormatter = (value: unknown): Option.Option<FormattedString.Typ
 	)(value as MFunction.Unknown);
 
 export const ansi = make({
-	initialTab: _('  '),
 	objectFormat: ObjectFormat({
 		startMark: _('{', ANSI.green),
 		endMark: _('}', ANSI.green),
