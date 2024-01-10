@@ -43,7 +43,7 @@ export const fromRecord = (input: MFunction.Record, options: Required<Options.Ty
 const keepProperty = (obj: MFunction.Record, options: Required<Options.Type>) => (property: Property.Type) =>
 	Option.match(options.propertyFilter(property), {
 		onNone: () =>
-			(!MFunction.isFunction(property.value) || options.showFunctions) &&
+			(!Function.isFunction(property.value) || options.showFunctions) &&
 			pipe(
 				Match.type<Options.stringOrSymbolPropertiesType>(),
 				Match.when('string', () => typeof property.originalKey === 'string'),
