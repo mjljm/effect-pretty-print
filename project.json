@@ -7,9 +7,10 @@
 	"devDeps": [],
 	"deps": [
 		["@mjljm/js-lib", "workspace:*"],
-		["@mjljm/effect-lib", "workspace:*"],
-		["effect", "*"],
-		["@effect/typeclass", "*"]
+		["@mjljm/effect-lib", "workspace:*"]
 	],
-	"peerDeps": []
+	"peerDeps": [
+		["effect", "2.0.5"],
+		["@effect/typeclass", "0.22.5"]
+	]
 }
