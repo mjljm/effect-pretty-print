@@ -10,7 +10,7 @@
 		["@mjljm/effect-lib", "workspace:*"]
 	],
 	"peerDeps": [
-		["effect", "2.0.5"],
-		["@effect/typeclass", "0.22.5"]
+		["effect", "2.1.2"],
+		["@effect/typeclass", "0.22.8"]
 	]
 }

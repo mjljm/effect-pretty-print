@@ -41,9 +41,10 @@ const extraRules = {
 	'import/no-extraneous-dependencies': [
 		'error',
 		{
-			devDependencies: false,
+			devDependencies: ['**/*.test.js'],
 			optionalDependencies: false,
-			peerDependencies: false
+			bundledDependencies: false,
+			includeTypes: true
 		}
 	],
 	'import/no-import-module-exports': 'error',
