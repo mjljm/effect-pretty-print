@@ -2,7 +2,7 @@ import * as FormattedString from '#mjljm/effect-pretty-print/FormattedString';
 import * as Options from '#mjljm/effect-pretty-print/Options';
 import * as Properties from '#mjljm/effect-pretty-print/Properties';
 import * as Property from '#mjljm/effect-pretty-print/Property';
-import { MFunction, MMatch, Tree } from '@mjljm/effect-lib';
+import { MFunction, MMatch, MTree } from '@mjljm/effect-lib';
 import { Function, Match, Option, ReadonlyArray, Tuple, pipe } from 'effect';
 
 //const moduleTag = '@mjljm/effect-pretty-print/stringify/';
@@ -15,7 +15,11 @@ const CIRCULAR = 'Circular';
  */
 interface Node {
 	readonly key: FormattedString.Type;
-	readonly formatParams: Options.ComplexTypeFormat | FormattedString.Type | MFunction.Primitive | MFunction.Function;
+	readonly formatParams:
+		| Options.ComplexTypeFormat
+		| FormattedString.Type
+		| MFunction.Primitive
+		| MFunction.Function;
 }
 
 /**
@@ -72,7 +76,7 @@ export function stringify(u: unknown, options?: Options.Type): FormattedString.T
 						endMark: FormattedString.concat(finalOptions.linebreak, currentTab, baseFormat.endMark),
 						separator: FormattedString.concat(baseFormat.separator, finalOptions.linebreak, nextTab)
 					})
-			  )
+				)
 			: baseFormat;
 
 		return FormattedString.concat(
@@ -83,7 +87,7 @@ export function stringify(u: unknown, options?: Options.Type): FormattedString.T
 	}
 
 	return pipe(
-		Tree.unfold({
+		MTree.unfold({
 			seed: Property.makeFromValue(Function.unsafeCoerce<unknown, MFunction.Unknown>(u)),
 			unfoldfunction: ({ key, value }, isCircular) => {
 				const makeLeaf = (
@@ -104,7 +108,7 @@ export function stringify(u: unknown, options?: Options.Type): FormattedString.T
 								finalOptions.formatter(CIRCULAR),
 								Option.getOrElse(() => CIRCULAR)
 							)
-					  )
+						)
 					: pipe(
 							finalOptions.formatter(value),
 							Option.map((formattedValue) => makeLeaf(key, formattedValue)),
@@ -132,24 +136,26 @@ export function stringify(u: unknown, options?: Options.Type): FormattedString.T
 									Match.orElse((primitiveOrFunction) => makeLeaf(key, primitiveOrFunction))
 								)(value)
 							)
-					  );
+						);
 			},
 			memoize: true
 		}),
-		Tree.fold(({ formatParams, key }, formattedChildren, level) =>
+		MTree.fold(({ formatParams, key }, formattedChildren, level) =>
 			formatProperty(
 				key,
 				FormattedString.isType(formatParams)
 					? formatParams
 					: MFunction.isPrimitive(formatParams) || MFunction.isFunction(formatParams)
-					  ? formatSimpleValue(formatParams)
-					  : finalOptions.noLineBreakIfShorterThan === 0
-					    ? formatComplexValue(formatParams, formattedChildren, true, level)
-					    : pipe(
+						? formatSimpleValue(formatParams)
+						: finalOptions.noLineBreakIfShorterThan === 0
+							? formatComplexValue(formatParams, formattedChildren, true, level)
+							: pipe(
 									formatComplexValue(formatParams, formattedChildren, false, level),
-									Option.liftPredicate((formatted) => formatted.printedLength <= finalOptions.noLineBreakIfShorterThan),
+									Option.liftPredicate(
+										(formatted) => formatted.printedLength <= finalOptions.noLineBreakIfShorterThan
+									),
 									Option.getOrElse(() => formatComplexValue(formatParams, formattedChildren, true, level))
-					      )
+								)
 			)
 		)
 	);

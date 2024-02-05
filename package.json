@@ -49,19 +49,19 @@
 	},
 	"devDependencies": {
 		"@effect/language-service": "^0.1.0",
-		"@html-eslint/eslint-plugin": "^0.22.0",
-		"@html-eslint/parser": "^0.22.0",
+		"@html-eslint/eslint-plugin": "^0.23.1",
+		"@html-eslint/parser": "^0.23.0",
 		"@mjljm/configs": "workspace:*",
 		"@types/eslint": "^8.56.2",
 		"@types/eslint-config-prettier": "^6.11.3",
 		"@types/eslint__js": "^8.42.3",
-		"@typescript-eslint/eslint-plugin": "^6.19.0",
-		"@typescript-eslint/parser": "^6.19.0",
+		"@typescript-eslint/eslint-plugin": "^6.20.0",
+		"@typescript-eslint/parser": "^6.20.0",
 		"cross-env": "^7.0.3",
 		"eslint": "^8.56.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-import-resolver-typescript": "^3.6.1",
-		"eslint-plugin-codegen": "^0.22.0",
+		"eslint-plugin-codegen": "^0.23.0",
 		"eslint-plugin-deprecation": "^2.0.0",
 		"eslint-plugin-import": "^2.29.1",
 		"eslint-plugin-markdown": "^3.0.1",
@@ -69,21 +69,19 @@
 		"eslint-plugin-yml": "^1.12.2",
 		"fast-check": "^3.15.0",
 		"madge": "^6.1.0",
-		"npm-check-updates": "^16.14.12",
+		"npm-check-updates": "^16.14.14",
 		"prettier": "^3.2.4",
 		"rimraf": "^5.0.5",
 		"terser": "^5.27.0",
 		"typescript": "^5.3.3",
-		"vite": "^5.0.11",
-		"vite-node": "^1.2.1",
-		"vitest": "^1.2.1"
+		"vite": "^5.0.12",
+		"vite-node": "^1.2.2",
+		"vitest": "^1.2.2"
 	},
 	"dependencies": {
+		"@effect/typeclass": "0.22.12",
 		"@mjljm/effect-lib": "workspace:*",
-		"@mjljm/js-lib": "workspace:*"
-	},
-	"peerDependencies": {
-		"@effect/typeclass": "0.22.8",
-		"effect": "2.1.2"
+		"@mjljm/js-lib": "workspace:*",
+		"effect": "2.2.3"
 	}
 }
