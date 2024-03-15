@@ -5,11 +5,7 @@
 		// "typescript.preferences.importModuleSpecifier": "non-relative",
 		"paths": {
 			"#mjljm/effect-pretty-print/*": ["./src/*.ts"]
-		},
-		"plugins": [
-			{
-			   "name": "@effect/language-service"
-			}]
+		}
 	},
 	"include": ["src", ".*", "*"]
 }
