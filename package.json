@@ -48,9 +48,9 @@
 		"clean-pnpm-cache": "rimraf node_modules"
 	},
 	"dependencies": {
-		"@effect/typeclass": "0.23.8",
+		"@effect/typeclass": "0.23.9",
 		"@mjljm/effect-lib": "workspace:*",
 		"@mjljm/js-lib": "workspace:*",
-		"effect": "2.4.8"
+		"effect": "2.4.9"
 	}
 }
