@@ -35,7 +35,7 @@ export const isType = MFunction.isOfId<Type>(TypeId);
 
 const prototype = {
 	[Equal.symbol](this: Type, that: Equal.Equal): boolean {
-		return isType(that) ? Equal.equals(this.value, that.value) : false;
+		return isType(that) ? this.value === that.value : false;
 	},
 	[Hash.symbol](this: Type): number {
 		return Hash.hash(this.value);
